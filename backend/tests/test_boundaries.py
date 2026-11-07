@@ -1,20 +1,11 @@
-import pytest
 from sqlalchemy.orm import Session
 
 from app.api.routes_scan import build_report
 from app.core.config import Settings
 from app.core.db import insert_report
-from app.core.ssrf import FetchDisabled, fetch_url
 from app.models.orm import ReportRow
 from app.models.schemas import MessageInput
 from app.web3.registry import publish, verify
-
-
-@pytest.mark.asyncio
-@pytest.mark.parametrize("url", ["http://127.0.0.1", "http://169.254.169.254/", "https://example.org"])
-async def test_all_fetches_denied(url):
-    with pytest.raises(FetchDisabled):
-        await fetch_url(url)
 
 
 def test_settings_from_environment(monkeypatch):

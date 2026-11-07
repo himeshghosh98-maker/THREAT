@@ -1,5 +1,6 @@
 from typing import Annotated, Literal
 from uuid import UUID
+from urllib.parse import urlsplit
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, HttpUrl, field_validator
 
@@ -10,6 +11,16 @@ class Model(BaseModel):
 
 class UrlInput(Model):
     url: HttpUrl
+
+    @field_validator("url", mode="before")
+    @classmethod
+    def validate_authority(cls, value):
+        if isinstance(value, str):
+            value = value.strip()
+            if (chr(92) in value or any(ord(c) < 32 for c in value)
+                    or "@" in urlsplit(value).netloc or urlsplit(value).port == 0):
+                raise ValueError("Invalid URL authority")
+        return value
 
 
 class MessageInput(Model):

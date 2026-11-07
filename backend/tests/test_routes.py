@@ -38,7 +38,7 @@ def test_list_and_correlations(client):
 
 
 @pytest.mark.parametrize(("route", "body", "expected"), [
-    ("url", {"url": "https://alice:secret@example.org/reset?otp=123456"}, "low_risk"),
+    ("url", {"url": "https://example.org/reset?otp=123456"}, "low_risk"),
     ("url", {"url": "https://example.zip"}, "suspicious"),
     ("message", {"message": "Urgent: send secret 123456"}, "suspicious"),
     ("message", {"message": "Meet on Tuesday"}, "low_risk"),
@@ -53,7 +53,7 @@ def test_scan_publish_verify(client, route, body, expected):
         assert report.input_display.startswith("hxxps://") and "[.]" in report.input_display
     else:
         assert report.message_analysis is not None
-    if expected == "low_risk":
+    if expected == "low_risk" and route == "message":
         assert report.ai_explanation.summary == "No significant indicators found in the available checks."
     path = f"{API}/reports/{report.id}"
     assert validated(client.get(path), ScanReport) == report

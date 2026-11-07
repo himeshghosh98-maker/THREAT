@@ -25,6 +25,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def lifespan(app):
         # Uvicorn access logs include query strings on both successful and failed requests.
         logging.getLogger("uvicorn.access").disabled = True
+        for name in ("httpx", "httpcore", "slowapi"):
+            logging.getLogger(name).setLevel(logging.ERROR)
         app.state.engine = open_database(settings.database_url)
         try:
             yield
@@ -32,6 +34,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             app.state.engine.dispose()
 
     app = FastAPI(lifespan=lifespan)
+    app.state.limiter = routes_scan.limiter
     app.add_middleware(CORSMiddleware, allow_origins=settings.origins,
                        allow_methods=["GET", "POST"], allow_headers=["Content-Type"])
     for router in (routes_health.router, routes_scan.router, routes_reports.router, routes_intel.router):
@@ -43,7 +46,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.exception_handler(HTTPException)
     async def http_error(request, exc):
-        codes = {404: "not_found", 405: "method_not_allowed"}
+        codes = {404: "not_found", 405: "method_not_allowed", 422: "validation_error", 429: "rate_limited"}
         return error(exc.status_code, codes.get(exc.status_code, "http_error"), str(exc.detail), exc.headers)
 
     @app.exception_handler(Exception)
