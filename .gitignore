@@ -1,0 +1,39 @@
+# Dependencies
+node_modules
+.venv
+venv
+
+# Build & framework outputs
+.next
+dist
+build
+
+# Python
+__pycache__
+*.pyc
+.pytest_cache
+coverage
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# OS files
+.DS_Store
+
+# Artifacts & cache
+artifacts/
+cache/
+
+# Logs
+*.log
+
+# Keys and certificates
+*.pem
+*.key
+*wallet*
+*private_key*
+*id_rsa*
+*id_ecdsa*
+*id_ed25519*
