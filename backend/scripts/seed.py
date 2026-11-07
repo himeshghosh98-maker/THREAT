@@ -4,6 +4,7 @@ from uuid import NAMESPACE_URL, uuid5
 from sqlalchemy.orm import Session
 
 from app.api.routes_scan import build_report
+from app.ai.explain import explain
 from app.analyzers.intel import NO_MATCH
 from app.analyzers.tls import DISCLAIMER
 from app.core.config import Settings
@@ -35,15 +36,21 @@ def seed(db: Session):
         MessageInput(message="Urgent: act now to review your account."),
         UrlInput(url="https://library.example"), UrlInput(url="https://calendar.example"),
         MessageInput(message="The public library opens at nine."),
+        MessageInput(message="Pay a processing fee to receive your job offer."),
     ]
     for index, sample in enumerate(samples):
         fixture_id = uuid5(NAMESPACE_URL, f"threat-intel:seed:{index}")
         row = db.get(ReportRow, str(fixture_id))
         if row:
-            if row.receipt or not isinstance(sample, UrlInput) or row.report.get("tls"):
+            if row.receipt:
                 continue
             report = ScanReport.model_validate(row.report)
-            enrich_fixture(report, index < 2)
+            if isinstance(sample, UrlInput) and not report.tls:
+                enrich_fixture(report, index < 2)
+            if isinstance(sample, MessageInput):
+                report = build_report(sample).model_copy(update={"id": report.id, "created_at": report.created_at})
+            report.ai_explanation = explain(report.risk, report.indicators)
+            row.classification = report.risk.classification
             row.report = report.model_dump(mode="json")
             continue
         report = build_report(sample)

@@ -25,7 +25,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def lifespan(app):
         # Uvicorn access logs include query strings on both successful and failed requests.
         logging.getLogger("uvicorn.access").disabled = True
-        for name in ("httpx", "httpcore", "slowapi"):
+        for name in ("httpx", "httpcore", "slowapi", "anthropic", "openai", "google_genai"):
             logging.getLogger(name).setLevel(logging.ERROR)
         app.state.engine = open_database(settings.database_url)
         try:

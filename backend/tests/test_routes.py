@@ -25,11 +25,11 @@ def test_health_and_cors(client):
 
 def test_list_and_correlations(client):
     listing = validated(client.get(API + "/reports"), ReportList)
-    assert listing.total == len(listing.items) == 6
+    assert listing.total == len(listing.items) == 7
     for risk in ("suspicious", "low_risk"):
         response = client.get(API + "/reports", params={"risk": risk, "offset": 1, "limit": 1})
         page = validated(response, ReportList)
-        assert page.total == 3
+        assert page.total == (4 if risk == "suspicious" else 3)
         assert len(page.items) == 1
         assert page.items[0].risk.classification == risk
     cluster, = validated(client.get(API + "/intel/correlations"), Correlations).clusters

@@ -10,7 +10,8 @@ from scripts.seed import seed
 @pytest.fixture
 def client(tmp_path):
     settings = Settings(database_url=f"sqlite:///{tmp_path}/db.sqlite",
-                        cors_origins="http://localhost:3000, https://ui.example", google_safe_browsing_key="test-only")
+                        cors_origins="http://localhost:3000, https://ui.example", google_safe_browsing_key="test-only",
+                        llm_provider="anthropic", anthropic_api_key=None, openai_api_key=None, gemini_api_key=None)
     app = create_app(settings)
     app.state.limiter.reset()
     with TestClient(app) as client:

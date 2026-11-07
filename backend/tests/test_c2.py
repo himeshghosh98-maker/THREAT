@@ -163,7 +163,7 @@ def test_google_match_and_secret_redirect(client, network):
 
 def test_seed_shapes(client):
     reports = [ScanReport.model_validate(row) for row in client.get("/api/v1/reports").json()["items"]]
-    assert len(reports) == 6
+    assert len(reports) == 7
     urls = [r for r in reports if r.input_type == "url"]
     assert all(r.tls and r.threat_intel for r in urls)
     assert any(r.security_headers for r in urls)

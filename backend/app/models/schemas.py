@@ -5,6 +5,9 @@ from urllib.parse import urlsplit
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, HttpUrl, field_validator
 
 
+from app.ai.privacy import clean_text
+
+
 class Model(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -24,12 +27,13 @@ class UrlInput(Model):
 
 
 class MessageInput(Model):
-    message: Annotated[str, Field(min_length=1, max_length=16000)]
+    message: Annotated[str, Field(min_length=1, max_length=5000)]
 
     @field_validator("message")
     @classmethod
     def require_text(cls, value: str) -> str:
-        if not value.strip():
+        value = clean_text(value)
+        if not value:
             raise ValueError("Message is empty")
         return value
 
