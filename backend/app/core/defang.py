@@ -2,6 +2,7 @@ from pydantic import HttpUrl
 
 
 def display_url(url: HttpUrl) -> str:
-    # Omit userinfo, port, path, query and fragment, which can contain secrets.
+    """Display only the defanged origin. Paths, credentials and queries can contain secrets."""
     scheme = "hxxps" if url.scheme == "https" else "hxxp"
-    return f"{scheme}://{url.host.replace('.', '[.]')}"
+    port = f":{url.port}" if url.port != {"https": 443, "http": 80}[url.scheme] else ""
+    return f"{scheme}://{url.host.replace('.', '[.]')}{port}"

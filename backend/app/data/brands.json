@@ -1,1 +1,186 @@
-[]
+{
+  "google": [
+    "google.com",
+    "google.co.in"
+  ],
+  "paypal": [
+    "paypal.com"
+  ],
+  "microsoft": [
+    "microsoft.com",
+    "microsoftonline.com"
+  ],
+  "apple": [
+    "apple.com"
+  ],
+  "amazon": [
+    "amazon.com",
+    "amazon.in",
+    "amazon.co.uk"
+  ],
+  "facebook": [
+    "facebook.com",
+    "fb.com"
+  ],
+  "instagram": [
+    "instagram.com"
+  ],
+  "whatsapp": [
+    "whatsapp.com"
+  ],
+  "netflix": [
+    "netflix.com"
+  ],
+  "github": [
+    "github.com"
+  ],
+  "gitlab": [
+    "gitlab.com"
+  ],
+  "linkedin": [
+    "linkedin.com"
+  ],
+  "yahoo": [
+    "yahoo.com"
+  ],
+  "outlook": [
+    "outlook.com",
+    "live.com"
+  ],
+  "adobe": [
+    "adobe.com"
+  ],
+  "dropbox": [
+    "dropbox.com"
+  ],
+  "salesforce": [
+    "salesforce.com"
+  ],
+  "slack": [
+    "slack.com"
+  ],
+  "zoom": [
+    "zoom.us"
+  ],
+  "stripe": [
+    "stripe.com"
+  ],
+  "ebay": [
+    "ebay.com"
+  ],
+  "walmart": [
+    "walmart.com"
+  ],
+  "shopify": [
+    "shopify.com"
+  ],
+  "spotify": [
+    "spotify.com"
+  ],
+  "youtube": [
+    "youtube.com",
+    "youtu.be"
+  ],
+  "tiktok": [
+    "tiktok.com"
+  ],
+  "twitter": [
+    "twitter.com",
+    "x.com"
+  ],
+  "discord": [
+    "discord.com",
+    "discord.gg"
+  ],
+  "binance": [
+    "binance.com"
+  ],
+  "coinbase": [
+    "coinbase.com"
+  ],
+  "chase": [
+    "chase.com"
+  ],
+  "hsbc": [
+    "hsbc.com",
+    "hsbc.co.in"
+  ],
+  "dhl": [
+    "dhl.com"
+  ],
+  "fedex": [
+    "fedex.com"
+  ],
+  "ups": [
+    "ups.com"
+  ],
+  "usps": [
+    "usps.com"
+  ],
+  "booking": [
+    "booking.com"
+  ],
+  "airbnb": [
+    "airbnb.com"
+  ],
+  "samsung": [
+    "samsung.com"
+  ],
+  "oracle": [
+    "oracle.com"
+  ],
+  "sbi": [
+    "sbi.co.in",
+    "onlinesbi.sbi",
+    "bank.sbi",
+    "sbi.bank.in"
+  ],
+  "hdfc": [
+    "hdfcbank.com",
+    "hdfc.bank.in"
+  ],
+  "icici": [
+    "icicibank.com",
+    "icici.bank.in"
+  ],
+  "axis": [
+    "axisbank.com",
+    "axis.bank.in"
+  ],
+  "paytm": [
+    "paytm.com"
+  ],
+  "phonepe": [
+    "phonepe.com"
+  ],
+  "upi": [
+    "npci.org.in"
+  ],
+  "irctc": [
+    "irctc.co.in"
+  ],
+  "aadhaar": [
+    "uidai.gov.in"
+  ],
+  "incometax": [
+    "incometax.gov.in"
+  ],
+  "digilocker": [
+    "digilocker.gov.in"
+  ],
+  "iitb": [
+    "iitb.ac.in"
+  ],
+  "iitd": [
+    "iitd.ac.in"
+  ],
+  "ignou": [
+    "ignou.ac.in"
+  ],
+  "du": [
+    "du.ac.in"
+  ],
+  "annauniv": [
+    "annauniv.edu"
+  ]
+}
