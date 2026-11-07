@@ -63,7 +63,8 @@ export async function health(): Promise<HealthResponse> {
 
 export async function scanUrl(url: string): Promise<ScanReport> {
   if (USE_MOCKS) {
-    await new Promise((r) => setTimeout(r, 600));
+    // Realistic 2 to 3 second delay
+    await new Promise((r) => setTimeout(r, 2200));
     const lower = url.toLowerCase();
     let matched: ScanReport | undefined;
 
@@ -71,7 +72,7 @@ export async function scanUrl(url: string): Promise<ScanReport> {
       matched = mockReportsStore.find((r) => r.id === "a1b2c3d4-e5f6-7a8b-9c0d-111111111111");
     } else if (lower.includes("apple") || lower.includes("xn--")) {
       matched = mockReportsStore.find((r) => r.id === "b2c3d4e5-f6a7-8b9c-0d1e-222222222222");
-    } else if (lower.includes("chase") || lower.includes("bank")) {
+    } else if (lower.includes("chase") || lower.includes("bank") || lower.includes("top") || lower.includes("xyz")) {
       matched = mockReportsStore.find((r) => r.id === "c3d4e5f6-a7b8-9c0d-1e2f-333333333333");
     } else if (lower.includes("github")) {
       matched = mockReportsStore.find((r) => r.id === "d4e5f6a7-b8c9-0d1e-2f3a-444444444444");
@@ -79,21 +80,46 @@ export async function scanUrl(url: string): Promise<ScanReport> {
       matched = mockReportsStore.find((r) => r.id === "e5f6a7b8-c9d0-1e2f-3a4b-555555555555");
     } else if (lower.includes("unknown") || lower.includes("biz")) {
       matched = mockReportsStore.find((r) => r.id === "f6a7b8c9-d01e-2f3a-4b5c-666666666666");
-    }
+    } else {
+      // General heuristic: suspicious keywords or hyphens/numbers in host vs benign
+      const isSuspicious =
+        lower.includes("login") ||
+        lower.includes("verify") ||
+        lower.includes("secure") ||
+        lower.includes("account") ||
+        lower.includes("free");
 
-    if (!matched) {
-      // Return first mock as default template but defang input
-      const template = mockReportsStore[0];
-      const defanged = url.replace(/https?:\/\//, "hxxps://").replace(/\./g, "[.]");
-      return {
-        ...template,
+      const baseMock = isSuspicious
+        ? mockReportsStore.find((r) => r.risk.classification === "high_risk") || mockReportsStore[0]
+        : mockReportsStore.find((r) => r.risk.classification === "low_risk") || mockReportsStore[3];
+
+      const defanged = url.replace(/https?:\/\//i, "hxxps://").replace(/\./g, "[.]");
+      const domain = url.replace(/^https?:\/\//i, "").split("/")[0] || null;
+
+      const newReport: ScanReport = {
+        ...baseMock,
         id: crypto.randomUUID(),
         created_at: new Date().toISOString(),
         input_display: defanged,
-        domain: url.replace(/^https?:\/\//i, "").split("/")[0] || null
+        domain
       };
+      mockReportsStore.unshift(newReport);
+      return newReport;
     }
-    return matched;
+
+    if (matched) {
+      // Clone with refreshed timestamp so it tops recent scans
+      const cloned: ScanReport = {
+        ...matched,
+        created_at: new Date().toISOString()
+      };
+      // Keep store updated with latest activity
+      const existingIdx = mockReportsStore.findIndex((r) => r.id === matched?.id);
+      if (existingIdx !== -1) {
+        mockReportsStore[existingIdx] = cloned;
+      }
+      return cloned;
+    }
   }
 
   const res = await fetch(`${API_BASE_URL}/api/v1/scan/url`, {
@@ -106,12 +132,55 @@ export async function scanUrl(url: string): Promise<ScanReport> {
 
 export async function scanMessage(message: string): Promise<ScanReport> {
   if (USE_MOCKS) {
-    await new Promise((r) => setTimeout(r, 700));
-    const msgReport = mockReportsStore.find((r) => r.input_type === "message");
-    if (msgReport) {
-      return msgReport;
+    // Realistic 2 to 3 second delay
+    await new Promise((r) => setTimeout(r, 2400));
+    const lower = message.toLowerCase();
+    const isSuspicious =
+      lower.includes("urgent") ||
+      lower.includes("restricted") ||
+      lower.includes("kyc") ||
+      lower.includes("parcel") ||
+      lower.includes("fee") ||
+      lower.includes("account") ||
+      lower.includes("chase") ||
+      lower.includes("bank") ||
+      lower.includes("suspended") ||
+      lower.includes("verify");
+
+    if (isSuspicious) {
+      const msgReport = mockReportsStore.find((r) => r.input_type === "message") || mockReportsStore[6];
+      const cloned: ScanReport = {
+        ...msgReport,
+        created_at: new Date().toISOString(),
+        input_display: message.length > 120 ? `${message.slice(0, 117)}...` : message
+      };
+      const existingIdx = mockReportsStore.findIndex((r) => r.id === msgReport.id);
+      if (existingIdx !== -1) {
+        mockReportsStore[existingIdx] = cloned;
+      }
+      return cloned;
     }
-    return mockReportsStore[0];
+
+    // Benign message mock
+    const baseMock = mockReportsStore.find((r) => r.risk.classification === "low_risk") || mockReportsStore[3];
+    const benignReport: ScanReport = {
+      ...baseMock,
+      id: crypto.randomUUID(),
+      created_at: new Date().toISOString(),
+      input_type: "message",
+      input_display: message.length > 120 ? `${message.slice(0, 117)}...` : message,
+      domain: null,
+      message_analysis: {
+        extracted_urls: [],
+        extracted_emails: [],
+        extracted_phones: [],
+        urgency_signals: [],
+        impersonation: { detected: false, target: null },
+        explanation: "No social engineering pressure or malicious indicators identified in submitted text."
+      }
+    };
+    mockReportsStore.unshift(benignReport);
+    return benignReport;
   }
 
   const res = await fetch(`${API_BASE_URL}/api/v1/scan/message`, {
