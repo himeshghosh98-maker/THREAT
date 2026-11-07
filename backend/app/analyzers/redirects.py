@@ -4,8 +4,8 @@ from app.core import ssrf
 SHORTENERS = {"bit.ly", "t.co", "tinyurl.com", "goo.gl", "ow.ly", "buff.ly", "is.gd"}
 
 
-async def analyze(url):
-    result = await ssrf.safe_fetch(url)
+async def analyze(url, page=None):
+    result = await page if page is not None else await ssrf.safe_fetch(url)
     items = []
     hosts = [hop.domain for hop in result.chain]
     if registered(url.host) in SHORTENERS or any(registered(host) in SHORTENERS for host in hosts):

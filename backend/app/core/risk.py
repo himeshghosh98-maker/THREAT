@@ -5,8 +5,9 @@ WEIGHTS = {"info": 2, "low": 8, "medium": 20, "high": 35, "critical": 55}
 
 def score_risk(indicators: list[Indicator], completed: list[str], failed: list[str],
                *, authoritative_hit: bool = False) -> Risk:
-    """Only a future verified threat-intel adapter may set authoritative_hit."""
-    score = min(100, sum(WEIGHTS[item.severity] for item in indicators))
+    """Only exact matches from a verified threat-intel source set authoritative_hit."""
+    score = min(100, sum(2 if item.category == "headers" and item.severity == "low"
+                         else WEIGHTS[item.severity] for item in indicators))
     strong = sum(item.severity in {"high", "critical"} for item in indicators)
     if authoritative_hit:
         classification, score = "confirmed_malicious", 100

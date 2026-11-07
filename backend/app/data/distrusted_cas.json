@@ -1,1 +1,17 @@
-[]
+{
+  "comment": "Illustrative example data only. Verify entries against official sources before production use. These synthetic identifiers do not match ordinary production CA names or establish a finding about any real issuer.",
+  "entries": [
+    {
+      "name": "eMudhra-related synthetic training fixture",
+      "fingerprint_or_match": "CN=eMudhra C2 Example Only",
+      "reason": "Exercises the exact distinguished-name match in a synthetic chain.",
+      "source_note": "Project test fixture. No assertion about eMudhra production certificates."
+    },
+    {
+      "name": "Synthetic CA fingerprint fixture",
+      "fingerprint_or_match": "abababababababababababababababababababababababababababababababab",
+      "reason": "Demonstrates a SHA-256 certificate fingerprint match.",
+      "source_note": "Synthetic example; replace only with a verified official advisory."
+    }
+  ]
+}

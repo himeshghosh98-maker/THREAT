@@ -20,13 +20,17 @@ Open http://localhost:8000/docs for interactive requests. Test with `.\.venv\Scr
 
 ## Data and configuration
 
-SQLite stores reports in artifacts/reports.db by default. Application startup and the seed script initialize the schema. Run the seed script to insert six samples, three suspicious and three low risk. Rerunning it preserves existing reports. Set DATABASE_URL to a PostgreSQL URL to use psycopg. Set CORS_ORIGINS to comma-separated browser origins. The default is http://localhost:3000.
+SQLite stores reports in artifacts/reports.db by default. Application startup and the seed script initialize the schema. Run the seed script to insert six samples, three suspicious and three low risk. Rerunning it backfills C2 fields on unpublished URL fixtures. Published reports retain their original content. Set DATABASE_URL to a PostgreSQL URL to use psycopg. Set CORS_ORIGINS to comma-separated browser origins. The default is http://localhost:3000.
 
 ## URL scans
 
-POST /api/v1/scan/url runs URL structure, DNS, RDAP registration age and HTTP redirect checks concurrently. Every HTTP connection uses a validated public IP with the requested hostname for HTTP and TLS. The fetcher follows at most five redirects within eight seconds and reads at most one million bytes of text. Reports retain only defanged origins in the hop list. The URL scan endpoint accepts ten requests per minute per client IP per process.
+POST /api/v1/scan/url runs URL structure, DNS, RDAP registration age and HTTP redirect checks alongside TLS certificate inspection, certificate transparency, passive headers and threat intelligence. Every HTTP connection uses a validated public IP with the requested hostname for HTTP and TLS. The fetcher follows at most five redirects within eight seconds and reads at most one million bytes of text. Reports retain only defanged origins in the hop list. The URL scan endpoint accepts ten requests per minute per client IP per process.
 
-A missing check reduces confidence. A report without indicators is inconclusive if any check failed. Two high-severity findings produce high risk. Confirmed malicious is reserved for future authoritative intelligence. The tests replace external DNS and HTTP transports with deterministic fixtures.
+A missing check reduces confidence. A report without indicators is inconclusive if any check failed. Two high-severity findings produce high risk. An exact OpenPhish URL match or Google Safe Browsing lookup hit can confirm a malicious URL. A hostname-only match is evidence of a listed URL elsewhere on the same host. DNS, HTTP and TLS are mocked in the test suite.
+
+OpenPhish Community Feed entries are cached as hashes in the database for six hours. From backend/, run `.\.venv\Scripts\python.exe -m scripts.refresh_feeds` to refresh manually. An expired snapshot and a failed refresh produce an unavailable result. Set GOOGLE_SAFE_BROWSING_KEY in .env to enable Google v4 Lookup, which sends the submitted URL without its fragment to Google. A missing key appears as an unavailable check.
+
+The TLS object describes the submitted HTTPS host. Header checks reuse the final response. The CA list uses synthetic identifiers, including an eMudhra-themed fixture. CT notes summarize the records returned by crt.sh. An unavailable CT lookup is recorded in checks_failed; the required numeric count is then zero and ct_notes explains that the count is unknown.
 
 Message scans still check urgency phrases. The seed command generates six local fixtures without network access. Two share a synthetic redirect for the correlations view.
 

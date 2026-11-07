@@ -15,3 +15,11 @@ class ReportRow(Base):
     classification: Mapped[str] = mapped_column(String(32), index=True)
     report: Mapped[dict] = mapped_column(JSON)
     receipt: Mapped[dict | None] = mapped_column(JSON(none_as_null=True), nullable=True)
+
+
+class FeedSnapshot(Base):
+    __tablename__ = "feed_snapshots"
+
+    source: Mapped[str] = mapped_column(String(40), primary_key=True)
+    refreshed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    entries: Mapped[dict] = mapped_column(JSON)

@@ -34,6 +34,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             app.state.engine.dispose()
 
     app = FastAPI(lifespan=lifespan)
+    app.state.settings = settings
     app.state.limiter = routes_scan.limiter
     app.add_middleware(CORSMiddleware, allow_origins=settings.origins,
                        allow_methods=["GET", "POST"], allow_headers=["Content-Type"])

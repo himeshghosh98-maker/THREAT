@@ -60,7 +60,7 @@ async def scan_url(request: Request, payload: UrlInput, db: Session = Depends(ge
         url = validate_url(payload.url)
     except BlockedTarget:
         raise HTTPException(422, "A public HTTP(S) URL on an allowed port is required.") from None
-    report = await analyze_url(url)
+    report = await analyze_url(url, request.app.state.engine, request.app.state.settings)
     insert_report(db, report)
     db.commit()
     return report
