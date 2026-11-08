@@ -33,6 +33,25 @@ export class ApiClientError extends Error {
 // In-memory store for mocks during dev/testing so publications persist in session
 const mockReportsStore: ScanReport[] = [...MOCK_REPORTS];
 
+export function formatFriendlyErrorMessage(code: string, status: number, rawMessage?: string): string {
+  if (code === "not_published" || status === 409) {
+    return "This report has not been published to the on-chain registry yet.";
+  }
+  if (code === "chain_unavailable" || status === 503) {
+    return "Blockchain service unavailable; report saved locally.";
+  }
+  if (status === 429 || code === "rate_limited") {
+    return "Too many requests. Rate limit reached (10 requests/minute). Please wait a moment before trying again.";
+  }
+  if (code === "validation_error" || status === 422) {
+    return rawMessage || "Invalid request parameters or target format.";
+  }
+  if (code === "not_found" || status === 404) {
+    return rawMessage || "The requested threat report was not found.";
+  }
+  return rawMessage || "An unexpected error occurred. Please try again.";
+}
+
 async function handleResponse<T>(res: Response): Promise<T> {
   if (!res.ok) {
     let errorData: ApiError | null = null;
@@ -41,8 +60,9 @@ async function handleResponse<T>(res: Response): Promise<T> {
     } catch {
       // response not JSON
     }
-    const code = errorData?.error?.code || `HTTP_${res.status}`;
-    const message = errorData?.error?.message || res.statusText || "Request failed";
+    const code = errorData?.error?.code || (res.status === 429 ? "rate_limited" : `HTTP_${res.status}`);
+    const rawMessage = errorData?.error?.message;
+    const message = formatFriendlyErrorMessage(code, res.status, rawMessage);
     throw new ApiClientError(code, message, res.status);
   }
   return res.json() as Promise<T>;
@@ -52,9 +72,8 @@ export async function health(): Promise<HealthResponse> {
   if (USE_MOCKS) {
     return {
       status: "ok",
-      service: "threat-intelligence-engine",
-      version: "1.0.0",
-      timestamp: new Date().toISOString()
+      service: "threat-intel-backend",
+      version: "1.0.0"
     };
   }
   const res = await fetch(`${API_BASE_URL}/api/v1/health`);

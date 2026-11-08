@@ -184,6 +184,7 @@ export interface ApiError {
 }
 
 export interface HealthResponse {
-  status: string;
-  [key: string]: unknown;
+  status: "ok";
+  service: "threat-intel-backend";
+  version: "1.0.0";
 }

@@ -120,6 +120,7 @@ function VerifyContent() {
   const is409 = statusCode === 409 || errorCode === "not_published";
   const is404 = statusCode === 404 || errorCode === "not_found";
   const is503 = statusCode === 503 || errorCode === "chain_unavailable";
+  const is429 = statusCode === 429 || errorCode === "rate_limited";
 
   const isSepolia =
     verifyResult?.network?.toLowerCase().includes("sepolia") ?? false;
@@ -292,6 +293,28 @@ function VerifyContent() {
                   >
                     <RefreshCw className="w-3.5 h-3.5" />
                     <span>Retry Verification</span>
+                  </Button>
+                </div>
+              </AlertDescription>
+            </Alert>
+          ) : is429 ? (
+            <Alert className="border-amber-500/50 bg-amber-950/25 text-amber-200">
+              <AlertTriangle className="w-5 h-5 text-amber-400" />
+              <AlertTitle className="text-sm font-bold text-amber-100">
+                Rate Limit Exceeded (429)
+              </AlertTitle>
+              <AlertDescription className="text-xs leading-relaxed space-y-3 mt-1">
+                <p>
+                  Too many verification requests. Please wait a moment before trying again.
+                </p>
+                <div>
+                  <Button
+                    size="sm"
+                    onClick={() => refetch()}
+                    className="text-xs gap-1.5 bg-amber-500 hover:bg-amber-600 text-black font-semibold"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    <span>Retry Request</span>
                   </Button>
                 </div>
               </AlertDescription>
