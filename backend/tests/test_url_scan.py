@@ -17,7 +17,8 @@ def scan(client, url):
     response = client.post(PATH, json={"url": url})
     assert response.status_code == 200, response.text
     report = ScanReport.model_validate(response.json())
-    assert report.ai_explanation is report.tls is report.message_analysis is None
+    assert report.ai_explanation and report.message_analysis is None
+    assert (report.tls is not None) == url.startswith("https:")
     assert report.precautions and report.limitations
     return report
 
@@ -47,7 +48,7 @@ def test_rdap_failure(client, network):
     network.handler = lambda req: network.response(503) if req.headers["host"] == "rdap.org" else handler(req)
     report = scan(client, "https://github.com")
     assert report.risk.classification == "inconclusive"
-    assert report.risk.checks_failed == ["RDAP"] and report.risk.confidence == 0.75
+    assert report.risk.checks_failed == ["RDAP"] and report.risk.confidence == round(len(report.risk.checks_completed) / (len(report.risk.checks_completed) + 1), 2)
     assert not any("No significant indicators" in note for note in report.limitations)
 
 

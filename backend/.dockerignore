@@ -6,3 +6,6 @@
 artifacts
 __pycache__
 .pytest_cache
+contracts/node_modules
+contracts/cache
+contracts/artifacts

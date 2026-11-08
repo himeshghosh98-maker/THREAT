@@ -1,0 +1,32 @@
+[
+  {
+    "label": "KYC SMS",
+    "message": "SBI KYC update required immediately or your account will be blocked. Verify at hxxps://sbi-secure-login[.]xyz/kyc.",
+    "indicator": "kyc-request"
+  },
+  {
+    "label": "Job offer",
+    "message": "Your job offer is ready. Pay the refundable processing fee to receive your appointment letter.",
+    "indicator": "job-fee"
+  },
+  {
+    "label": "Parcel fee",
+    "message": "Your parcel is awaiting redelivery. Pay the delivery fee at https://parcel-pay.example/fee.",
+    "indicator": "delivery-fee"
+  },
+  {
+    "label": "Bank notification",
+    "message": "Your monthly bank statement is available in the mobile app.",
+    "indicator": null
+  },
+  {
+    "label": "Newsletter",
+    "message": "This week's library newsletter includes the schedule for our reading group.",
+    "indicator": null
+  },
+  {
+    "label": "Friend",
+    "message": "Are you free for lunch on Saturday?",
+    "indicator": null
+  }
+]

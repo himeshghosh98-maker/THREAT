@@ -8,9 +8,10 @@ from scripts.seed import seed
 
 
 @pytest.fixture
-def client(tmp_path):
+def client(tmp_path, mock_registry):
     settings = Settings(database_url=f"sqlite:///{tmp_path}/db.sqlite",
-                        cors_origins="http://localhost:3000, https://ui.example")
+                        cors_origins="http://localhost:3000, https://ui.example", google_safe_browsing_key="test-only",
+                        llm_provider="anthropic", anthropic_api_key=None, openai_api_key=None, gemini_api_key=None)
     app = create_app(settings)
     app.state.limiter.reset()
     with TestClient(app) as client:
@@ -50,12 +51,22 @@ def network(monkeypatch):
         return httpx.Response(status, headers=headers or {"content-type": "text/html"}, stream=Body(data))
 
     def handler(request):
+        host = request.headers["host"]
+        if host == "crt.sh":
+            return response(data=b"[]", headers={"content-type": "application/json"})
+        if host == "raw.githubusercontent.com":
+            return response(data=b"https://listed.example/login", headers={"content-type": "text/plain"})
+        if host == "safebrowsing.googleapis.com":
+            return response(data=b"{}", headers={"content-type": "application/json"})
+
         if request.headers["host"] == "rdap.org":
             domain = request.url.path.split("/")[-1]
             record = {"ldhName": domain, "events": [{"eventAction": "registration",
                        "eventDate": "2000-01-01T00:00:00Z"}]}
             return response(data=json.dumps(record).encode(), headers={"content-type": "application/rdap+json"})
-        return response()
+        return response(headers={"content-type": "text/html", "strict-transport-security": "max-age=31536000",
+                                 "content-security-policy": "default-src 'self'", "x-frame-options": "DENY",
+                                 "x-content-type-options": "nosniff", "referrer-policy": "no-referrer"})
 
     fixture = SimpleNamespace(requests=[], handler=handler, response=response, records=Records)
 
@@ -66,3 +77,63 @@ def network(monkeypatch):
     monkeypatch.setattr(ssrf, "dns_answer", answer)
     monkeypatch.setattr(httpx.AsyncHTTPTransport, "handle_async_request", transport)
     return fixture
+
+
+@pytest.fixture(scope="session")
+def signing_key():
+    from cryptography.hazmat.primitives.asymmetric import rsa
+    return rsa.generate_private_key(public_exponent=65537, key_size=2048)
+
+
+@pytest.fixture
+def certificate(signing_key):
+    from datetime import UTC, datetime, timedelta
+    from cryptography import x509
+    from cryptography.hazmat.primitives import hashes
+    from cryptography.x509.oid import NameOID
+
+    def issue(host, *, start=-30, end=60, issuer="Training CA", key=None):
+        now = datetime.now(UTC)
+        name = lambda value: x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, value)])
+        return (x509.CertificateBuilder().subject_name(name(host)).issuer_name(name(issuer))
+                .public_key((key or signing_key).public_key()).serial_number(x509.random_serial_number())
+                .not_valid_before(now + timedelta(days=start)).not_valid_after(now + timedelta(days=end))
+                .add_extension(x509.SubjectAlternativeName([x509.DNSName(host)]), critical=False)
+                .sign(signing_key, hashes.SHA256()))
+    return issue
+
+
+@pytest.fixture(autouse=True)
+def tls_transport(monkeypatch, certificate):
+    from app.analyzers import tls
+    async def handshake(address, port, host, verify):
+        return [certificate(host)]
+    monkeypatch.setattr(tls, "handshake", handshake)
+
+@pytest.fixture
+def mock_registry(monkeypatch):
+    from datetime import UTC, datetime
+    from app.web3 import registry
+    from app.models.schemas import History, Onchain
+
+    ledger = {}
+
+    class MockRegistry:
+        def __init__(self, settings, address=None):
+            self.address = address or "0x" + "ab" * 20
+
+        def submit(self, digest, category):
+            id = len(ledger)
+            tx = "0x" + f"{id + 1:064x}"
+            ledger[id] = {"digest": digest, "status": "published", "category": category,
+                          "history": [History(status="published", tx_hash=tx, timestamp=datetime.now(UTC))]}
+            state = Onchain(status="published", report_hash=digest, tx_hash=tx, chain_report_id=id,
+                            network="local", contract_address=self.address)
+            return {"onchain": state.model_dump(mode="json"), "block": id + 1}
+
+        def inspect(self, receipt, history):
+            entry = ledger[receipt["onchain"]["chain_report_id"]]
+            return entry["digest"], entry["status"], entry["history"] if history else []
+
+    monkeypatch.setattr(registry, "Registry", MockRegistry)
+    return ledger

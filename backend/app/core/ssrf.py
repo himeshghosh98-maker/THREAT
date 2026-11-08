@@ -88,22 +88,34 @@ class FetchResult:
     chain: list[Redirect]
     body: bytes = b""
     failed: bool = False
+    headers: httpx.Headers | None = None
 
 
-async def safe_fetch(url, max_redirects=5, timeout=8, max_bytes=1_000_000) -> FetchResult:
+async def safe_fetch(url, max_redirects=5, timeout=8, max_bytes=1_000_000, *, resolution=None, json_body=None, api_key=None) -> FetchResult:
     current = validate_url(url)
+    if json_body is not None or api_key is not None:
+        if str(current) != "https://safebrowsing.googleapis.com/v4/threatMatches:find":
+            raise BlockedTarget("Invalid intelligence endpoint.")
+        max_redirects = 0
     chain: list[Redirect] = []
     try:
         async with asyncio.timeout(timeout):
             for hop in range(min(max_redirects, 5) + 1):
                 host = current.host.strip("[]").rstrip(".")
-                address = (await safe_resolve(host))[0]
+                if hop == 0 and resolution is not None:
+                    addresses = await asyncio.shield(resolution)
+                else:
+                    addresses = await safe_resolve(host)
+                address = public_ip(str(addresses[0]))
                 logical = httpx.URL(str(current))
                 pinned = logical.copy_with(host=str(address), fragment=None)
                 headers = {"Host": logical.netloc.decode(), "Accept-Encoding": "identity"}
+                if api_key is not None:
+                    headers["X-Goog-Api-Key"] = api_key.get_secret_value()
                 # A fresh client prevents cross-origin cookie and TLS connection reuse.
                 async with httpx.AsyncClient(trust_env=False, timeout=timeout) as client:
-                    async with client.stream("GET", pinned, headers=headers, follow_redirects=False,
+                    async with client.stream("POST" if json_body is not None else "GET", pinned, headers=headers,
+                                             json=json_body, follow_redirects=False,
                                              extensions={"sni_hostname": host}) as response:
                         chain.append(Redirect(url=display_url(current), status=response.status_code,
                                               domain=host))
@@ -117,13 +129,13 @@ async def safe_fetch(url, max_redirects=5, timeout=8, max_bytes=1_000_000) -> Fe
                             "application/json", "application/rdap+json"}
                         if (not textual or "attachment" in response.headers.get("content-disposition", "").lower()
                                 or response.headers.get("content-encoding", "identity").lower() != "identity"):
-                            return FetchResult(chain)
+                            return FetchResult(chain, headers=response.headers)
                         body = bytearray()
                         async for chunk in response.aiter_raw():
                             if len(body) + len(chunk) > min(max_bytes, 1_000_000):
                                 return FetchResult(chain, failed=True)
                             body.extend(chunk)
-                        return FetchResult(chain, bytes(body))
+                        return FetchResult(chain, bytes(body), headers=response.headers)
     except (ValueError, OSError, TimeoutError, dns.exception.DNSException, httpx.HTTPError):
         pass
     return FetchResult(chain, failed=True)
