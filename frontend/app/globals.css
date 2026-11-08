@@ -70,3 +70,43 @@ body {
                     linear-gradient(to bottom, rgba(30, 41, 59, 0.2) 1px, transparent 1px);
   background-size: 32px 32px;
 }
+
+@media print {
+  aside,
+  header,
+  footer,
+  .print-hidden,
+  button,
+  [role="tablist"] {
+    display: none !important;
+  }
+
+  body,
+  main {
+    background-color: #0e1320 !important;
+    color: #dee2f5 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .print-avoid-break {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .print-page-break {
+    page-break-before: always !important;
+    break-before: page !important;
+  }
+
+  /* Expand all tab panels in print layout */
+  [role="tabpanel"] {
+    display: block !important;
+    margin-bottom: 2rem !important;
+  }
+
+  [role="tabpanel"][hidden] {
+    display: block !important;
+  }
+}

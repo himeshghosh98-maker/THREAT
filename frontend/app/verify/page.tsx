@@ -24,7 +24,7 @@ import Link from "next/link";
 
 function VerifyContent() {
   const searchParams = useSearchParams();
-  const initialId = searchParams.get("report_id") || "";
+  const initialId = searchParams.get("report_id") || searchParams.get("id") || "";
   const [reportIdInput, setReportIdInput] = React.useState(initialId);
   const [activeSearchId, setActiveSearchId] = React.useState(initialId);
 

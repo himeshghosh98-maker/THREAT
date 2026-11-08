@@ -4,28 +4,36 @@ import * as React from "react";
 import { useParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getReport, publishReport } from "@/lib/api";
-import { RiskBadge, getRiskDetails } from "@/components/RiskBadge";
-import { RiskGauge } from "@/components/RiskGauge";
-import { IndicatorList } from "@/components/IndicatorList";
-import { RedirectTimeline } from "@/components/RedirectTimeline";
-import { TlsCard } from "@/components/TlsCard";
-import { HeadersTable } from "@/components/HeadersTable";
-import { AiExplanation } from "@/components/AiExplanation";
-import { ChainStatus } from "@/components/ChainStatus";
-import { Disclaimer } from "@/components/Disclaimer";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ReportHeader } from "@/components/report/ReportHeader";
+import { SummaryStrip } from "@/components/report/SummaryStrip";
+import { FailedChecksBanner } from "@/components/report/FailedChecksBanner";
+import { SidePanel } from "@/components/report/SidePanel";
+import { OverviewTab } from "@/components/report/OverviewTab";
+import { EvidenceTab } from "@/components/report/EvidenceTab";
+import { NetworkTab } from "@/components/report/NetworkTab";
+import { TlsTab } from "@/components/report/TlsTab";
+import { HeadersTab } from "@/components/report/HeadersTab";
+import { ThreatIntelTab } from "@/components/report/ThreatIntelTab";
+import { MessageTab } from "@/components/report/MessageTab";
+import { OnchainTab } from "@/components/report/OnchainTab";
+import { DisclaimerSection } from "@/components/report/DisclaimerSection";
+import { PublishConfirmModal } from "@/components/report/PublishConfirmModal";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
   AlertCircle,
   ArrowLeft,
-  Calendar,
-  Globe,
+  Check,
+  Sparkles,
+  ListFilter,
+  Network,
+  Lock,
+  FileCode,
+  Database,
   Radio,
-  CheckCircle2,
-  Info
+  Link2
 } from "lucide-react";
 import Link from "next/link";
 
@@ -34,6 +42,33 @@ function ReportDetailContent() {
   const id = params?.id as string;
   const queryClient = useQueryClient();
 
+  // Toast feedback state
+  const [toastMessage, setToastMessage] = React.useState<string | null>(null);
+  const toastTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  const showToast = React.useCallback((message: string) => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
+    setToastMessage(message);
+    toastTimeoutRef.current = setTimeout(() => {
+      setToastMessage(null);
+    }, 2500);
+  }, []);
+
+  const handleCopyText = React.useCallback(
+    (text: string, label: string) => {
+      if (!text) return;
+      navigator.clipboard.writeText(text);
+      showToast(`${label} copied to clipboard`);
+    },
+    [showToast]
+  );
+
+  // Publish confirmation modal state
+  const [isPublishModalOpen, setIsPublishModalOpen] = React.useState(false);
+
+  // Fetch report query
   const {
     data: report,
     isLoading,
@@ -45,22 +80,34 @@ function ReportDetailContent() {
     enabled: !!id
   });
 
+  // Publish mutation
   const publishMutation = useMutation({
     mutationFn: () => publishReport(id),
     onSuccess: (updatedReport) => {
       queryClient.setQueryData(["report", id], updatedReport);
       queryClient.invalidateQueries({ queryKey: ["reports"] });
+      setIsPublishModalOpen(false);
+      showToast("Report successfully anchored on blockchain!");
+    },
+    onError: () => {
+      setIsPublishModalOpen(false);
     }
   });
 
   if (isLoading) {
     return (
-      <div className="space-y-6 py-6">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-36 w-full" />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Skeleton className="h-64 md:col-span-1" />
-          <Skeleton className="h-64 md:col-span-2" />
+      <div className="space-y-6 py-6 animate-pulse">
+        <Skeleton className="h-8 w-56 bg-surface-container" />
+        <Skeleton className="h-28 w-full bg-surface-container" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Skeleton className="h-32 bg-surface-container" />
+          <Skeleton className="h-32 bg-surface-container" />
+          <Skeleton className="h-32 bg-surface-container" />
+          <Skeleton className="h-32 bg-surface-container" />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-4">
+          <Skeleton className="h-96 lg:col-span-8 bg-surface-container" />
+          <Skeleton className="h-96 lg:col-span-4 bg-surface-container" />
         </div>
       </div>
     );
@@ -68,192 +115,283 @@ function ReportDetailContent() {
 
   if (isError || !report) {
     return (
-      <div className="space-y-4 py-8 max-w-2xl mx-auto">
-        <Alert variant="destructive">
-          <AlertCircle className="w-4 h-4" />
-          <AlertTitle>Report Not Found</AlertTitle>
-          <AlertDescription>
-            {(error as Error)?.message || `Could not find threat report with ID '${id}'.`}
+      <div className="space-y-6 py-12 max-w-2xl mx-auto">
+        <Alert variant="destructive" className="border-red-500 bg-red-950/40">
+          <AlertCircle className="w-5 h-5" />
+          <AlertTitle className="text-base font-bold">Report Not Found</AlertTitle>
+          <AlertDescription className="text-xs leading-relaxed mt-1">
+            {(error as Error)?.message || `Threat intelligence report '${id}' could not be located.`}
           </AlertDescription>
         </Alert>
-        <Link href="/">
-          <Button variant="outline" size="sm" className="gap-1.5 text-xs">
-            <ArrowLeft className="w-3.5 h-3.5" /> Return to Threat Scanner
-          </Button>
-        </Link>
+        <div className="flex justify-start">
+          <Link href="/">
+            <Button variant="outline" size="sm" className="gap-2 text-xs">
+              <ArrowLeft className="w-3.5 h-3.5" /> Return to Threat Scanner
+            </Button>
+          </Link>
+        </div>
       </div>
     );
   }
 
-  const isLowRisk = report.risk.classification === "low_risk";
-  const riskMeta = getRiskDetails(report.risk.classification);
+  const isMessage = report.input_type === "message";
 
   return (
-    <div className="space-y-6 py-4">
-      {/* Navigation Breadcrumb & Actions */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <Link href="/">
-          <Button variant="ghost" size="sm" className="gap-1.5 text-xs text-zinc-400 hover:text-zinc-200">
-            <ArrowLeft className="w-3.5 h-3.5" /> Back to Scanner
-          </Button>
-        </Link>
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-mono text-zinc-400">
-            UUID: <span className="text-zinc-300">{report.id}</span>
-          </span>
-        </div>
-      </div>
-
-      {/* Target Summary Header */}
-      <Card className="border-zinc-800 bg-zinc-900/70 shadow-lg">
-        <CardContent className="p-6">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-            <div className="space-y-3 flex-1 min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <RiskBadge
-                  classification={report.risk.classification}
-                  score={report.risk.score}
-                />
-                <span className="text-xs font-mono uppercase px-2 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700/60">
-                  {report.input_type} target
-                </span>
-                <span className="text-xs text-zinc-400 flex items-center gap-1 font-mono">
-                  <Calendar className="w-3.5 h-3.5" />
-                  {new Date(report.created_at).toLocaleString()}
-                </span>
-              </div>
-
-              {/* Defanged Target - strictly non-clickable text */}
-              <div className="space-y-1">
-                <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-400">
-                  Defanged Scanned Target:
-                </span>
-                <div className="p-3 rounded-md bg-zinc-950 border border-zinc-800 font-mono text-sm text-cyan-300 break-all select-all">
-                  {report.input_display}
-                </div>
-              </div>
-
-              {/* Domain & Risk classification verdict description */}
-              <div className="flex flex-wrap items-center gap-4 text-xs text-zinc-300">
-                {report.domain && (
-                  <div className="flex items-center gap-1.5 font-mono">
-                    <Globe className="w-3.5 h-3.5 text-zinc-400" />
-                    <span>Domain: <strong className="text-zinc-200">{report.domain}</strong></span>
-                  </div>
-                )}
-                {isLowRisk && (
-                  <div className="text-emerald-400 flex items-center gap-1.5 font-medium">
-                    <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-                    <span>No significant indicators found in the available checks.</span>
-                  </div>
-                )}
-                {!isLowRisk && (
-                  <div className="text-zinc-400 flex items-center gap-1.5">
-                    <Info className="w-3.5 h-3.5 shrink-0 text-zinc-400" />
-                    <span>{riskMeta.description}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Risk Gauge Visual */}
-            <div className="border-t lg:border-t-0 lg:border-l border-zinc-800 pt-4 lg:pt-0 lg:pl-6 shrink-0 flex justify-center">
-              <RiskGauge risk={report.risk} />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* On-chain Proof Status */}
-      <ChainStatus
-        reportId={report.id}
-        onchain={report.onchain}
-        onPublish={() => publishMutation.mutate()}
+    <div className="space-y-6 py-2">
+      {/* 1. Header Toolbar & Defanged Target Bar */}
+      <ReportHeader
+        report={report}
+        onCopyTarget={() => handleCopyText(report.input_display, "Defanged Target")}
+        onOpenPublishModal={() => setIsPublishModalOpen(true)}
         isPublishing={publishMutation.isPending}
       />
 
-      {/* Message Analysis Banner (if message scan) */}
-      {report.message_analysis && (
-        <Card className="border-purple-900/50 bg-purple-950/20">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-purple-300 flex items-center gap-2">
-              <Radio className="w-4 h-4" /> Message Lure & Smishing Deconstruction
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 text-xs">
-            <p className="text-zinc-300">{report.message_analysis.explanation}</p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div className="p-2.5 rounded bg-zinc-950/80 border border-zinc-800 space-y-1">
-                <span className="text-zinc-400 font-mono">Urgency Triggers</span>
-                <div className="text-red-400 font-semibold">
-                  {report.message_analysis.urgency_signals.join(", ") || "None"}
-                </div>
-              </div>
-              <div className="p-2.5 rounded bg-zinc-950/80 border border-zinc-800 space-y-1">
-                <span className="text-zinc-400 font-mono">Impersonation Target</span>
-                <div className="text-amber-400 font-semibold">
-                  {report.message_analysis.impersonation.detected
-                    ? report.message_analysis.impersonation.target || "Detected"
-                    : "None detected"}
-                </div>
-              </div>
-              <div className="p-2.5 rounded bg-zinc-950/80 border border-zinc-800 space-y-1">
-                <span className="text-zinc-400 font-mono">Extracted Numbers</span>
-                <div className="text-zinc-300 font-mono">
-                  {report.message_analysis.extracted_phones.join(", ") || "None"}
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* 2. Summary Strip: 4 Equal Cards */}
+      <SummaryStrip report={report} />
 
-      {/* Detailed Technical Tabs */}
-      <Tabs defaultValue="indicators" className="w-full">
-        <TabsList className="grid grid-cols-2 md:grid-cols-5 mb-4 bg-zinc-900 border border-zinc-800">
-          <TabsTrigger value="indicators" className="text-xs">
-            Indicators ({report.indicators.length})
-          </TabsTrigger>
-          <TabsTrigger value="ai" className="text-xs">
-            AI Synthesis
-          </TabsTrigger>
-          <TabsTrigger value="redirects" className="text-xs">
-            Redirects ({report.redirect_chain.length})
-          </TabsTrigger>
-          <TabsTrigger value="tls" className="text-xs">
-            TLS Security
-          </TabsTrigger>
-          <TabsTrigger value="headers" className="text-xs">
-            Headers ({report.security_headers.length})
-          </TabsTrigger>
-        </TabsList>
+      {/* 3. Amber Failed Checks Alert Banner */}
+      <FailedChecksBanner checksFailed={report.risk.checks_failed} />
 
-        <TabsContent value="indicators" className="space-y-4">
-          <IndicatorList indicators={report.indicators} />
-        </TabsContent>
+      {/* 4. Main Two-Column Layout (Interactive Tabs & Desktop Side Panel) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Left/Center Column: Technical Tabs + Below Tabs Disclaimers */}
+        <div className="lg:col-span-8 xl:col-span-9 space-y-6">
+          {/* Interactive Tabs (Screen View) */}
+          <div className="print:hidden">
+            <Tabs defaultValue="overview" className="w-full space-y-4">
+              <TabsList
+                className={`grid w-full bg-surface-container border border-surface-container-high/80 p-1 rounded-xl h-auto ${
+                  isMessage
+                    ? "grid-cols-2 sm:grid-cols-4 md:grid-cols-8"
+                    : "grid-cols-2 sm:grid-cols-4 md:grid-cols-7"
+                }`}
+              >
+                <TabsTrigger
+                  value="overview"
+                  className="text-xs py-2 data-[state=active]:bg-primary data-[state=active]:text-on-primary font-mono gap-1.5"
+                >
+                  <Sparkles className="w-3.5 h-3.5" /> Overview
+                </TabsTrigger>
 
-        <TabsContent value="ai" className="space-y-4">
-          <AiExplanation explanation={report.ai_explanation} />
-        </TabsContent>
+                <TabsTrigger
+                  value="evidence"
+                  className="text-xs py-2 data-[state=active]:bg-primary data-[state=active]:text-on-primary font-mono gap-1.5"
+                >
+                  <ListFilter className="w-3.5 h-3.5" /> Evidence ({report.indicators.length})
+                </TabsTrigger>
 
-        <TabsContent value="redirects" className="space-y-4">
-          <RedirectTimeline chain={report.redirect_chain} />
-        </TabsContent>
+                <TabsTrigger
+                  value="network"
+                  className="text-xs py-2 data-[state=active]:bg-primary data-[state=active]:text-on-primary font-mono gap-1.5"
+                >
+                  <Network className="w-3.5 h-3.5" /> Network ({report.redirect_chain.length})
+                </TabsTrigger>
 
-        <TabsContent value="tls" className="space-y-4">
-          <TlsCard tls={report.tls} />
-        </TabsContent>
+                <TabsTrigger
+                  value="tls"
+                  className="text-xs py-2 data-[state=active]:bg-primary data-[state=active]:text-on-primary font-mono gap-1.5"
+                >
+                  <Lock className="w-3.5 h-3.5" /> TLS
+                </TabsTrigger>
 
-        <TabsContent value="headers" className="space-y-4">
-          <HeadersTable headers={report.security_headers} />
-        </TabsContent>
-      </Tabs>
+                <TabsTrigger
+                  value="headers"
+                  className="text-xs py-2 data-[state=active]:bg-primary data-[state=active]:text-on-primary font-mono gap-1.5"
+                >
+                  <FileCode className="w-3.5 h-3.5" /> Headers ({report.security_headers.length})
+                </TabsTrigger>
 
-      {/* Mandatory Limitations & Precautions */}
-      <Disclaimer
-        limitations={report.limitations}
-        precautions={report.precautions}
+                <TabsTrigger
+                  value="intel"
+                  className="text-xs py-2 data-[state=active]:bg-primary data-[state=active]:text-on-primary font-mono gap-1.5"
+                >
+                  <Database className="w-3.5 h-3.5" /> Threat Intel ({report.threat_intel.length})
+                </TabsTrigger>
+
+                {isMessage && (
+                  <TabsTrigger
+                    value="message"
+                    className="text-xs py-2 data-[state=active]:bg-secondary data-[state=active]:text-black font-mono gap-1.5"
+                  >
+                    <Radio className="w-3.5 h-3.5" /> Message
+                  </TabsTrigger>
+                )}
+
+                <TabsTrigger
+                  value="onchain"
+                  className="text-xs py-2 data-[state=active]:bg-primary data-[state=active]:text-on-primary font-mono gap-1.5"
+                >
+                  <Link2 className="w-3.5 h-3.5" /> On-Chain
+                </TabsTrigger>
+              </TabsList>
+
+              {/* Tab 1: Overview */}
+              <TabsContent value="overview" className="mt-0 focus-visible:outline-none">
+                <OverviewTab
+                  explanation={report.ai_explanation}
+                  indicators={report.indicators}
+                />
+              </TabsContent>
+
+              {/* Tab 2: Evidence */}
+              <TabsContent value="evidence" className="mt-0 focus-visible:outline-none">
+                <EvidenceTab indicators={report.indicators} />
+              </TabsContent>
+
+              {/* Tab 3: Network */}
+              <TabsContent value="network" className="mt-0 focus-visible:outline-none">
+                <NetworkTab
+                  redirectChain={report.redirect_chain}
+                  domain={report.domain}
+                  indicators={report.indicators}
+                />
+              </TabsContent>
+
+              {/* Tab 4: TLS */}
+              <TabsContent value="tls" className="mt-0 focus-visible:outline-none">
+                <TlsTab tls={report.tls} />
+              </TabsContent>
+
+              {/* Tab 5: Headers */}
+              <TabsContent value="headers" className="mt-0 focus-visible:outline-none">
+                <HeadersTab headers={report.security_headers} />
+              </TabsContent>
+
+              {/* Tab 6: Threat Intel */}
+              <TabsContent value="intel" className="mt-0 focus-visible:outline-none">
+                <ThreatIntelTab threatIntel={report.threat_intel} />
+              </TabsContent>
+
+              {/* Tab 7: Message (only if message) */}
+              {isMessage && (
+                <TabsContent value="message" className="mt-0 focus-visible:outline-none">
+                  <MessageTab analysis={report.message_analysis} />
+                </TabsContent>
+              )}
+
+              {/* Tab 8: Onchain */}
+              <TabsContent value="onchain" className="mt-0 focus-visible:outline-none">
+                <OnchainTab
+                  reportId={report.id}
+                  onchain={report.onchain}
+                  onPublish={() => publishMutation.mutate()}
+                  isPublishing={publishMutation.isPending}
+                  publishError={publishMutation.error as Error | null}
+                  onCopyText={handleCopyText}
+                  onOpenConfirmModal={() => setIsPublishModalOpen(true)}
+                />
+              </TabsContent>
+            </Tabs>
+          </div>
+
+          {/* Sequential Sections (Print / PDF View Only) */}
+          <div className="hidden print:block space-y-8">
+            <section className="print-avoid-break space-y-3">
+              <h3 className="text-base font-bold font-mono border-b pb-1 text-primary">
+                1. Executive Threat Summary & AI Synthesis
+              </h3>
+              <OverviewTab
+                explanation={report.ai_explanation}
+                indicators={report.indicators}
+              />
+            </section>
+
+            <section className="print-avoid-break print-page-break space-y-3">
+              <h3 className="text-base font-bold font-mono border-b pb-1 text-primary">
+                2. Threat Indicators & Heuristic Evidence
+              </h3>
+              <EvidenceTab indicators={report.indicators} />
+            </section>
+
+            <section className="print-avoid-break space-y-3">
+              <h3 className="text-base font-bold font-mono border-b pb-1 text-primary">
+                3. Network Traversal, DNS & GeoIP Routing
+              </h3>
+              <NetworkTab
+                redirectChain={report.redirect_chain}
+                domain={report.domain}
+                indicators={report.indicators}
+              />
+            </section>
+
+            <section className="print-avoid-break space-y-3">
+              <h3 className="text-base font-bold font-mono border-b pb-1 text-primary">
+                4. Cryptographic TLS Security Assessment
+              </h3>
+              <TlsTab tls={report.tls} />
+            </section>
+
+            <section className="print-avoid-break space-y-3">
+              <h3 className="text-base font-bold font-mono border-b pb-1 text-primary">
+                5. Security Headers Analysis
+              </h3>
+              <HeadersTab headers={report.security_headers} />
+            </section>
+
+            <section className="print-avoid-break space-y-3">
+              <h3 className="text-base font-bold font-mono border-b pb-1 text-primary">
+                6. Multi-Source Threat Intelligence Feeds
+              </h3>
+              <ThreatIntelTab threatIntel={report.threat_intel} />
+            </section>
+
+            {isMessage && (
+              <section className="print-avoid-break space-y-3">
+                <h3 className="text-base font-bold font-mono border-b pb-1 text-primary">
+                  7. Message Lure & Communication Artifacts
+                </h3>
+                <MessageTab analysis={report.message_analysis} />
+              </section>
+            )}
+
+            <section className="print-avoid-break space-y-3">
+              <h3 className="text-base font-bold font-mono border-b pb-1 text-primary">
+                8. Decentralized Blockchain Provenance Record
+              </h3>
+              <OnchainTab
+                reportId={report.id}
+                onchain={report.onchain}
+                onPublish={() => publishMutation.mutate()}
+                isPublishing={publishMutation.isPending}
+                publishError={publishMutation.error as Error | null}
+                onCopyText={handleCopyText}
+                onOpenConfirmModal={() => setIsPublishModalOpen(true)}
+              />
+            </section>
+          </div>
+
+          {/* Mandatory Below-Tabs: Precautions & Limitations */}
+          <DisclaimerSection
+            precautions={report.precautions}
+            limitations={report.limitations}
+          />
+        </div>
+
+        {/* Right Column: Desktop Side Panel (Collapses below on mobile) */}
+        <div className="lg:col-span-4 xl:col-span-3">
+          <SidePanel report={report} onCopyText={handleCopyText} />
+        </div>
+      </div>
+
+      {/* Confirmation Modal for On-Chain Publication */}
+      <PublishConfirmModal
+        isOpen={isPublishModalOpen}
+        onClose={() => setIsPublishModalOpen(false)}
+        onConfirm={() => publishMutation.mutate()}
+        isPublishing={publishMutation.isPending}
       />
+
+      {/* Floating Copy Toast Notification */}
+      {toastMessage && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-xl border border-primary/50 bg-surface-container-high px-4 py-3 text-xs font-mono font-medium text-primary shadow-2xl animate-in fade-in slide-in-from-bottom-3"
+        >
+          <Check className="w-4 h-4 text-primary shrink-0" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
     </div>
   );
 }
@@ -262,12 +400,14 @@ export default function ReportDetailPage() {
   return (
     <React.Suspense
       fallback={
-        <div className="space-y-6 py-6">
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-36 w-full" />
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Skeleton className="h-64 md:col-span-1" />
-            <Skeleton className="h-64 md:col-span-2" />
+        <div className="space-y-6 py-6 animate-pulse">
+          <Skeleton className="h-8 w-56 bg-surface-container" />
+          <Skeleton className="h-28 w-full bg-surface-container" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Skeleton className="h-32 bg-surface-container" />
+            <Skeleton className="h-32 bg-surface-container" />
+            <Skeleton className="h-32 bg-surface-container" />
+            <Skeleton className="h-32 bg-surface-container" />
           </div>
         </div>
       }
