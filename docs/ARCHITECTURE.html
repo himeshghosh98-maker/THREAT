@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>System Architecture: Threat Intelligence & Digital Trust System</title>
+<style>
+  @page {
+    size: A4;
+    margin: 16mm 14mm 16mm 14mm;
+    @bottom-right {
+      content: counter(page) " / " counter(pages);
+      font-size: 8pt;
+      color: #64748b;
+    }
+  }
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: #0f172a;
+    background-color: #ffffff;
+    line-height: 1.5;
+    font-size: 9.5pt;
+    margin: 0;
+    padding: 0;
+  }
+  h1 {
+    font-size: 18pt;
+    font-weight: 800;
+    color: #0f172a;
+    margin-top: 0;
+    margin-bottom: 4px;
+    letter-spacing: -0.02em;
+    border-bottom: 2px solid #0284c7;
+    padding-bottom: 8px;
+  }
+  h2 {
+    font-size: 13pt;
+    font-weight: 700;
+    color: #1e293b;
+    margin-top: 18px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 4px;
+    page-break-after: avoid;
+  }
+  h3 {
+    font-size: 10.5pt;
+    font-weight: 600;
+    color: #334155;
+    margin-top: 12px;
+    margin-bottom: 6px;
+    page-break-after: avoid;
+  }
+  p, ul, ol {
+    margin-top: 4px;
+    margin-bottom: 8px;
+  }
+  ul {
+    padding-left: 20px;
+  }
+  li {
+    margin-bottom: 3px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 6px;
+    margin-bottom: 12px;
+    font-size: 8.5pt;
+    page-break-inside: auto;
+  }
+  tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+  th, td {
+    border: 1px solid #cbd5e1;
+    padding: 5px 7px;
+    text-align: left;
+    vertical-align: top;
+  }
+  th {
+    background-color: #f1f5f9;
+    font-weight: 600;
+    color: #1e293b;
+  }
+  tr:nth-child(even) td {
+    background-color: #f8fafc;
+  }
+  code, pre {
+    font-family: "JetBrains Mono", Consolas, Menlo, Monaco, monospace;
+    font-size: 8pt;
+  }
+  code {
+    background-color: #f1f5f9;
+    padding: 1px 4px;
+    border-radius: 3px;
+    border: 1px solid #e2e8f0;
+  }
+  pre {
+    background-color: #0f172a;
+    color: #f8fafc;
+    padding: 8px 10px;
+    border-radius: 4px;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+    margin: 6px 0;
+    page-break-inside: avoid;
+  }
+  .badge {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 7.5pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .meta-box {
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-left: 4px solid #0284c7;
+    padding: 8px 12px;
+    border-radius: 0 4px 4px 0;
+    margin-bottom: 14px;
+    font-size: 8.5pt;
+  }
+  .meta-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px 16px;
+  }
+  .card {
+    border: 1px solid #cbd5e1;
+    border-left: 4px solid #0284c7;
+    border-radius: 4px;
+    padding: 8px 10px;
+    margin-bottom: 10px;
+    background-color: #ffffff;
+    page-break-inside: avoid;
+  }
+  .diagram-container {
+    background-color: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 14px;
+    margin: 10px 0;
+    page-break-inside: avoid;
+    text-align: center;
+  }
+  .diagram-container svg {
+    max-width: 100%;
+    height: auto;
+  }
+  .page-break {
+    page-break-before: always;
+  }
+</style>
+</head>
+<body>
+
+<h1>Threat Intelligence & Digital Trust System — Architecture Blueprint</h1>
+
+<div class="meta-box">
+  <div class="meta-grid">
+    <div><strong>Project Name:</strong> TrustPulse Threat Intel & Trust Platform</div>
+    <div><strong>Document Type:</strong> Technical Architecture Blueprint</div>
+    <div><strong>Monorepo Layout:</strong> 3 Git Worktrees (main, backend-dev, frontend-dev)</div>
+    <div><strong>Key Technologies:</strong> FastAPI (3.12), Next.js 16, Hardhat, Solidity 0.8.28</div>
+    <div><strong>Security Boundary:</strong> Strict Zero-Trust SSRF IP Pinning & Validation</div>
+    <div><strong>Integrity Layer:</strong> Keccak-256 On-Chain Proofs (No Raw URLs/PII)</div>
+  </div>
+</div>
+
+<h2>1. Executive Summary & Problem Statement</h2>
+<p>
+Modern web security confronts two escalating threats:
+</p>
+<ol>
+  <li><strong>Adaptive Social Engineering & Phishing</strong>: Attackers evade perimeter blocklists using subtle brand typosquatting, Punycode homographs, short-lived DV certificates, and urgent psychological pretexts.</li>
+  <li><strong>The Centralized Scanner Trust Dilemma</strong>: Centralized detection feeds act as unverified black boxes whose verdicts can be retroactively edited, backdated, or deleted.</li>
+</ol>
+<p>
+<strong>Our Solution</strong> integrates multi-vector heuristic analysis with an immutable Ethereum/EVM on-chain registry (<code>ThreatReportRegistry.sol</code>) that cryptographically timestamps scan verdicts without placing user private data or raw URLs on-chain.
+</p>
+
+<h2>2. Core Architectural & Security Invariants</h2>
+<ul>
+  <li><strong>Never Call a Site "Safe"</strong>: Absence of known indicators is not proof of safety. The system designates benign sites as: <em>"No significant indicators found in the available checks."</em></li>
+  <li><strong>A Valid TLS Cert is Never Proof of Safety</strong>: Over 85% of phishing infrastructure uses valid Let's Encrypt certificates. The engine analyzes Certificate Transparency (CT) logs and CA reputations.</li>
+  <li><strong>Deterministic Verdicts Only (AI Never Decides Risk)</strong>: Risk classifications and scores are calculated exclusively by deterministic heuristics and authoritative feeds. The LLM only generates structured explanations.</li>
+  <li><strong>Zero-Trust SSRF Protection (Scanner Must Not Become a Threat)</strong>: Outbound fetcher strictly resolves and pins public IPs, rejects loopbacks, cloud metadata (169.254.169.254), hex/octal bypasses, and re-validates all redirect hops.</li>
+  <li><strong>No PII or Raw URLs On-Chain</strong>: Only a canonical Keccak-256 digest and a category string are submitted to smart contracts. Full user privacy is preserved.</li>
+  <li><strong>Blockchain Proves Integrity & History, Not Truth</strong>: On-chain anchoring proves a scan existed at a specific timestamp and has not been altered; it does not claim the external website itself is trustworthy.</li>
+</ul>
+
+<h2>3. High-Level System Architecture</h2>
+<div class="diagram-container">
+  <svg viewBox="0 0 850 420" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+    <!-- Background styling -->
+    <defs>
+      <linearGradient id="boxGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#1e293b"/>
+        <stop offset="100%" stop-color="#0f172a"/>
+      </linearGradient>
+      <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#0284c7"/>
+        <stop offset="100%" stop-color="#0369a1"/>
+      </linearGradient>
+    </defs>
+    
+    <!-- User -->
+    <rect x="20" y="170" width="120" height="60" rx="8" fill="url(#accentGrad)" stroke="#38bdf8" stroke-width="1.5"/>
+    <text x="80" y="195" fill="#ffffff" font-size="11" font-weight="bold" text-anchor="middle">Security Analyst</text>
+    <text x="80" y="212" fill="#bae6fd" font-size="9" text-anchor="middle">Browser / API</text>
+    
+    <!-- Arrow User -> UI -->
+    <path d="M 140 200 L 190 200" stroke="#38bdf8" stroke-width="2" marker-end="url(#arrow)"/>
+
+    <!-- Frontend UI -->
+    <rect x="190" y="150" width="160" height="100" rx="8" fill="url(#boxGrad)" stroke="#38bdf8" stroke-width="1.5"/>
+    <text x="270" y="175" fill="#38bdf8" font-size="12" font-weight="bold" text-anchor="middle">Next.js 16 Dashboard</text>
+    <text x="270" y="195" fill="#cbd5e1" font-size="9" text-anchor="middle">React Query • Tailwind CSS</text>
+    <text x="270" y="210" fill="#cbd5e1" font-size="9" text-anchor="middle">Scanner • Intel • Verify</text>
+    <text x="270" y="228" fill="#94a3b8" font-size="8" text-anchor="middle">(Port 3000)</text>
+
+    <!-- Arrow UI -> Backend -->
+    <path d="M 350 200 L 400 200" stroke="#38bdf8" stroke-width="2"/>
+
+    <!-- Backend -->
+    <rect x="400" y="40" width="230" height="340" rx="10" fill="#1e293b" stroke="#0ea5e9" stroke-width="1.5"/>
+    <text x="515" y="65" fill="#38bdf8" font-size="13" font-weight="bold" text-anchor="middle">FastAPI Backend Engine</text>
+    <text x="515" y="80" fill="#94a3b8" font-size="8.5" text-anchor="middle">Python 3.12 (Port 8000)</text>
+
+    <!-- Sub-boxes inside backend -->
+    <rect x="415" y="95" width="200" height="55" rx="5" fill="#0f172a" stroke="#475569" stroke-width="1"/>
+    <text x="515" y="115" fill="#f8fafc" font-size="10" font-weight="bold" text-anchor="middle">Zero-Trust SSRF Boundary</text>
+    <text x="515" y="132" fill="#94a3b8" font-size="8" text-anchor="middle">DNS Pinning • Redirect Validation</text>
+
+    <rect x="415" y="160" width="200" height="65" rx="5" fill="#0f172a" stroke="#475569" stroke-width="1"/>
+    <text x="515" y="180" fill="#f8fafc" font-size="10" font-weight="bold" text-anchor="middle">Heuristic Pipeline</text>
+    <text x="515" y="197" fill="#cbd5e1" font-size="8" text-anchor="middle">Typosquats • Punycode • TLS/CT</text>
+    <text x="515" y="212" fill="#cbd5e1" font-size="8" text-anchor="middle">Passive Headers • OpenPhish Feeds</text>
+
+    <rect x="415" y="235" width="200" height="60" rx="5" fill="#0f172a" stroke="#475569" stroke-width="1"/>
+    <text x="515" y="255" fill="#f8fafc" font-size="10" font-weight="bold" text-anchor="middle">Deterministic Risk Engine</text>
+    <text x="515" y="272" fill="#cbd5e1" font-size="8" text-anchor="middle">Strict Indicator Weights (0-100)</text>
+    <text x="515" y="285" fill="#cbd5e1" font-size="8" text-anchor="middle">Score >= 30: Suspicious Threshold</text>
+
+    <rect x="415" y="305" width="200" height="60" rx="5" fill="#0f172a" stroke="#475569" stroke-width="1"/>
+    <text x="515" y="325" fill="#f8fafc" font-size="10" font-weight="bold" text-anchor="middle">Privacy AI Layer</text>
+    <text x="515" y="342" fill="#cbd5e1" font-size="8" text-anchor="middle">PII Redaction • Prompt Shielding</text>
+    <text x="515" y="355" fill="#cbd5e1" font-size="8" text-anchor="middle">Claude / OpenAI / Deterministic</text>
+
+    <!-- Arrow Backend -> Right blocks -->
+    <path d="M 630 180 L 680 140" stroke="#38bdf8" stroke-width="1.5"/>
+    <path d="M 630 260 L 680 290" stroke="#38bdf8" stroke-width="1.5"/>
+
+    <!-- Database -->
+    <rect x="680" y="100" width="150" height="75" rx="8" fill="url(#boxGrad)" stroke="#10b981" stroke-width="1.5"/>
+    <text x="755" y="125" fill="#34d399" font-size="11" font-weight="bold" text-anchor="middle">SQLite Database</text>
+    <text x="755" y="145" fill="#cbd5e1" font-size="8.5" text-anchor="middle">Threat Reports Store</text>
+    <text x="755" y="160" fill="#94a3b8" font-size="8" text-anchor="middle">OpenPhish Feed Cache</text>
+
+    <!-- Blockchain -->
+    <rect x="680" y="250" width="150" height="85" rx="8" fill="url(#boxGrad)" stroke="#818cf8" stroke-width="1.5"/>
+    <text x="755" y="275" fill="#a5b4fc" font-size="11" font-weight="bold" text-anchor="middle">EVM Smart Contract</text>
+    <text x="755" y="295" fill="#cbd5e1" font-size="8.5" text-anchor="middle">ThreatReportRegistry.sol</text>
+    <text x="755" y="310" fill="#cbd5e1" font-size="8" text-anchor="middle">Keccak-256 Integrity Hashes</text>
+    <text x="755" y="325" fill="#94a3b8" font-size="8" text-anchor="middle">(Hardhat / Sepolia)</text>
+  </svg>
+</div>
+
+<div class="page-break"></div>
+
+<h2>4. Multi-Workspace Repository Layout</h2>
+<pre>kernal-fresh/
+├── kernal-v2/                 # Main Integration Workspace (branch: main)
+│   ├── docs/                  # API Contracts, Architecture, Bug Reports & Screenshots
+│   │   ├── API_CONTRACT.md    # Strict JSON contract for frontend-backend interfaces
+│   │   ├── BUG_REPORT.md      # Full QA audit & regression test suite
+│   │   └── audit-screenshots/ # Automated high-res UI audit captures
+│   ├── docker-compose.yml     # Multi-container service definitions
+│   └── README.md              # Unified quickstart & developer documentation
+│
+├── wt-backend/                # Backend Worktree (branch: backend-dev)
+│   └── backend/
+│       ├── app/
+│       │   ├── ai/            # Privacy masking, provider abstraction, prompt shielding
+│       │   ├── analyzers/     # DNS, headers, intel, phishing, redirects, TLS
+│       │   ├── api/           # FastAPI routers (health, scan, reports, intel)
+│       │   ├── core/          # SSRF fetcher, defanging, risk engine, database
+│       │   ├── models/        # Pydantic schemas and SQLAlchemy ORM models
+│       │   └── web3/          # Web3 registry client and canonical report hasher
+│       ├── contracts/         # Hardhat project: ThreatReportRegistry.sol & tests
+│       ├── scripts/           # Seed fixtures, local chain runner, feed refresher
+│       └── tests/             # 130+ unit and integration tests (pytest)
+│
+└── wt-frontend/               # Frontend Worktree (branch: frontend-dev)
+    └── frontend/
+        ├── app/               # Next.js 16 App Router (/, /report/[id], /intel, /verify)
+        ├── components/        # Cyber SOC theme widgets, tabs, modal, risk badges
+        ├── lib/               # Typed API client, error formatters, contract types
+        └── public/            # Assets and branding</pre>
+
+<h2>5. Component Technical Breakdown</h2>
+
+<div class="card">
+  <h3>A. Zero-Trust SSRF & Network Boundary</h3>
+  <ul>
+    <li><strong>Mediated Transport</strong>: Every HTTP connection occurs strictly through <code>safe_fetch()</code>.</li>
+    <li><strong>Connection Pinning</strong>: Resolves IPv4 (<code>A</code>) and IPv6 (<code>AAAA</code>) records, verifies <code>is_global</code>, and connects directly to <code>http://&lt;IP&gt;:&lt;PORT&gt;</code> while passing original hostname in <code>Host</code> and TLS SNI extensions to defeat DNS rebinding.</li>
+    <li><strong>Redirect Sanitization</strong>: Up to 5 redirects are inspected; every destination is re-validated through the SSRF pipeline before opening the socket.</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h3>B. Heuristic Detection Pipeline</h3>
+  <ul>
+    <li><strong>Phishing & URL Structure</strong>: Typosquatting (Levenshtein distance against top global domains), Punycode Cyrillic homographs, subdomain depth, and RDAP registration age (&lt; 30 days flags risk).</li>
+    <li><strong>TLS & CT Logs</strong>: Analyzes X.509 validity, queries <code>crt.sh</code> for certificate issuance spikes, and cross-references against a distrusted Certificate Authority database.</li>
+    <li><strong>Passive Headers</strong>: Assesses HSTS, CSP, X-Frame-Options, X-Content-Type-Options, and Referrer-Policy.</li>
+    <li><strong>Threat Intel Feeds</strong>: OpenPhish community feed cache and Google Safe Browsing API v4 lookups.</li>
+    <li><strong>Message Analysis</strong>: Regex extraction of URLs/phones/emails, detecting urgency pressure and recruitment fees.</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h3>C. Deterministic Risk Engine</h3>
+  <ul>
+    <li><strong>Formula</strong>: <code>Score = min(100, sum(Weights(Indicators)))</code></li>
+    <li><strong>Weights</strong>: <code>info (+2)</code>, <code>low (+8)</code>, <code>medium (+20)</code>, <code>high (+35)</code>, <code>critical (+55)</code>.</li>
+    <li><strong>Classifications</strong>:
+      <ul>
+        <li><code>confirmed_malicious</code>: Authoritative threat intel hit.</li>
+        <li><code>high_risk</code>: Score &ge; 70 with 2+ high indicators.</li>
+        <li><code>suspicious</code>: Score 30-69 or typosquatting/homograph detected.</li>
+        <li><code>low_risk</code>: Score &lt; 30 with checks completed.</li>
+        <li><code>inconclusive</code>: Key checks (DNS/fetch) failed.</li>
+      </ul>
+    </li>
+  </ul>
+</div>
+
+<div class="card">
+  <h3>D. Web3 Digital Trust Registry</h3>
+  <ul>
+    <li><strong>Smart Contract</strong>: <code>ThreatReportRegistry.sol</code> on EVM.</li>
+    <li><strong>Canonical Serialization</strong>: Normalizes JSON stripping user PII, free text, and raw URLs.</li>
+    <li><strong>Cryptographic Proof</strong>: Canonical JSON is hashed using <code>Keccak-256</code>.</li>
+    <li><strong>Tamper Detection</strong>: Verifying recalculates the current database record digest against the on-chain event log. Any database edit immediately flips <code>match</code> to <code>false</code>.</li>
+  </ul>
+</div>
+
+<div class="page-break"></div>
+
+<h2>6. End-to-End Scan & Publish Sequence</h2>
+<div class="diagram-container">
+  <svg viewBox="0 0 850 480" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+    <!-- Header Labels -->
+    <rect x="20" y="20" width="90" height="30" rx="4" fill="#0284c7"/>
+    <text x="65" y="40" fill="#ffffff" font-size="10" font-weight="bold" text-anchor="middle">Analyst</text>
+
+    <rect x="150" y="20" width="90" height="30" rx="4" fill="#0369a1"/>
+    <text x="195" y="40" fill="#ffffff" font-size="10" font-weight="bold" text-anchor="middle">Next.js UI</text>
+
+    <rect x="290" y="20" width="90" height="30" rx="4" fill="#0284c7"/>
+    <text x="335" y="40" fill="#ffffff" font-size="10" font-weight="bold" text-anchor="middle">FastAPI</text>
+
+    <rect x="430" y="20" width="90" height="30" rx="4" fill="#0369a1"/>
+    <text x="475" y="40" fill="#ffffff" font-size="10" font-weight="bold" text-anchor="middle">SSRF Fetcher</text>
+
+    <rect x="570" y="20" width="90" height="30" rx="4" fill="#0284c7"/>
+    <text x="615" y="40" fill="#ffffff" font-size="10" font-weight="bold" text-anchor="middle">Risk & AI</text>
+
+    <rect x="710" y="20" width="110" height="30" rx="4" fill="#4338ca"/>
+    <text x="765" y="40" fill="#ffffff" font-size="10" font-weight="bold" text-anchor="middle">EVM Contract</text>
+
+    <!-- Lifelines -->
+    <line x1="65" y1="50" x2="65" y2="460" stroke="#334155" stroke-dasharray="4"/>
+    <line x1="195" y1="50" x2="195" y2="460" stroke="#334155" stroke-dasharray="4"/>
+    <line x1="335" y1="50" x2="335" y2="460" stroke="#334155" stroke-dasharray="4"/>
+    <line x1="475" y1="50" x2="475" y2="460" stroke="#334155" stroke-dasharray="4"/>
+    <line x1="615" y1="50" x2="615" y2="460" stroke="#334155" stroke-dasharray="4"/>
+    <line x1="765" y1="50" x2="765" y2="460" stroke="#334155" stroke-dasharray="4"/>
+
+    <!-- Steps -->
+    <!-- 1 -->
+    <line x1="65" y1="80" x2="195" y2="80" stroke="#38bdf8" stroke-width="1.5"/>
+    <text x="130" y="75" fill="#cbd5e1" font-size="8" text-anchor="middle">1. Submit URL / SMS</text>
+
+    <!-- 2 -->
+    <line x1="195" y1="110" x2="335" y2="110" stroke="#38bdf8" stroke-width="1.5"/>
+    <text x="265" y="105" fill="#cbd5e1" font-size="8" text-anchor="middle">2. POST /api/v1/scan/url</text>
+
+    <!-- 3 -->
+    <line x1="335" y1="140" x2="475" y2="140" stroke="#38bdf8" stroke-width="1.5"/>
+    <text x="405" y="135" fill="#cbd5e1" font-size="8" text-anchor="middle">3. safe_resolve() & IP pinning</text>
+
+    <!-- 4 -->
+    <line x1="475" y1="170" x2="335" y2="170" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="2"/>
+    <text x="405" y="165" fill="#94a3b8" font-size="8" text-anchor="middle">4. TLS / Headers / Redirects</text>
+
+    <!-- 5 -->
+    <line x1="335" y1="200" x2="615" y2="200" stroke="#38bdf8" stroke-width="1.5"/>
+    <text x="475" y="195" fill="#cbd5e1" font-size="8" text-anchor="middle">5. Compute Score & Classification</text>
+
+    <!-- 6 -->
+    <line x1="615" y1="230" x2="335" y2="230" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="2"/>
+    <text x="475" y="225" fill="#94a3b8" font-size="8" text-anchor="middle">6. Explanation & Precautions</text>
+
+    <!-- 7 -->
+    <line x1="335" y1="260" x2="195" y2="260" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="2"/>
+    <text x="265" y="255" fill="#94a3b8" font-size="8" text-anchor="middle">7. Return ScanReport JSON</text>
+
+    <!-- 8 -->
+    <line x1="195" y1="290" x2="65" y2="290" stroke="#34d399" stroke-width="1.5"/>
+    <text x="130" y="285" fill="#34d399" font-size="8" text-anchor="middle">8. Render Security Report</text>
+
+    <!-- Publish Box -->
+    <rect x="50" y="320" width="730" height="120" rx="6" fill="#1e293b" fill-opacity="0.6" stroke="#6366f1" stroke-dasharray="4"/>
+    <text x="70" y="340" fill="#a5b4fc" font-size="9" font-weight="bold">Optional: On-Chain Cryptographic Anchoring</text>
+
+    <line x1="65" y1="365" x2="195" y2="365" stroke="#818cf8" stroke-width="1.5"/>
+    <text x="130" y="360" fill="#c7d2fe" font-size="8" text-anchor="middle">9. Click "Publish"</text>
+
+    <line x1="195" y1="390" x2="335" y2="390" stroke="#818cf8" stroke-width="1.5"/>
+    <text x="265" y="385" fill="#c7d2fe" font-size="8" text-anchor="middle">10. POST /publish</text>
+
+    <line x1="335" y1="415" x2="765" y2="415" stroke="#818cf8" stroke-width="1.5"/>
+    <text x="550" y="410" fill="#c7d2fe" font-size="8" text-anchor="middle">11. submitReport(Keccak256 digest, category)</text>
+  </svg>
+</div>
+
+<h2>7. API Contract Quick Reference</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Endpoint</th>
+      <th>Method</th>
+      <th>Input Payload / Parameters</th>
+      <th>Return Object</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>/api/v1/health</code></td>
+      <td>GET</td>
+      <td>None</td>
+      <td><code>{"status": "ok", "service": "...", "version": "1.0.0"}</code></td>
+    </tr>
+    <tr>
+      <td><code>/api/v1/scan/url</code></td>
+      <td>POST</td>
+      <td><code>{"url": "https://example.com"}</code></td>
+      <td>Full <code>ScanReport</code> with indicators, TLS, headers, risk</td>
+    </tr>
+    <tr>
+      <td><code>/api/v1/scan/message</code></td>
+      <td>POST</td>
+      <td><code>{"message": "KYC expired..."}</code></td>
+      <td><code>ScanReport</code> with message_analysis & urgency signals</td>
+    </tr>
+    <tr>
+      <td><code>/api/v1/reports</code></td>
+      <td>GET</td>
+      <td><code>?risk=suspicious&amp;limit=20&amp;offset=0</code></td>
+      <td><code>{"items": ScanReport[], "total": number}</code></td>
+    </tr>
+    <tr>
+      <td><code>/api/v1/reports/{id}</code></td>
+      <td>GET</td>
+      <td>Report UUID</td>
+      <td><code>ScanReport</code></td>
+    </tr>
+    <tr>
+      <td><code>/api/v1/reports/{id}/publish</code></td>
+      <td>POST</td>
+      <td>Report UUID</td>
+      <td><code>ScanReport</code> with populated <code>onchain</code> receipt & tx_hash</td>
+    </tr>
+    <tr>
+      <td><code>/api/v1/reports/{id}/verify</code></td>
+      <td>GET</td>
+      <td>Report UUID</td>
+      <td><code>VerifyResult</code> (<code>match: bool</code>, history, mandatory note)</td>
+    </tr>
+    <tr>
+      <td><code>/api/v1/intel/correlations</code></td>
+      <td>GET</td>
+      <td>None</td>
+      <td><code>{"clusters": Cluster[]}</code> (shared redirect networks, IPs)</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>8. Ideas for Brainstorming & Future Iterations</h2>
+<ul>
+  <li><strong>Computer Vision Brand Matching</strong>: Render candidate landing pages in headless browser and compute SSIM/perceptual hashes against legitimate corporate login portals.</li>
+  <li><strong>Containerized DOM Sandbox</strong>: Execute JavaScript within a secure ephemeral micro-VM to catch runtime credential stealers and dynamic phishing payloads.</li>
+  <li><strong>Decentralized Oracle Integration (Chainlink)</strong>: Allow smart contracts across DeFi to query URL trust ratings before approving interaction with unknown protocols.</li>
+  <li><strong>Zero-Knowledge Scan Proofs (zk-SNARKs)</strong>: Provide verifiable cryptographic proof that a security audit occurred without disclosing sensitive indicator details.</li>
+  <li><strong>Autonomous Agent Investigation</strong>: Agentic recursive pivoting to map out adversary server networks across ASN clusters.</li>
+</ul>
+
+</body>
+</html>
