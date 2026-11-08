@@ -1,8 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Progress } from "@/components/ui/progress";
-import { CheckCircle2, Loader2, AlertCircle } from "lucide-react";
+import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 
 export const DEFAULT_SCAN_STAGES = [
   "Submit",
@@ -27,7 +26,6 @@ export function StepProgress({
   isError = false,
   steps
 }: StepProgressProps) {
-  // If legacy `steps` array is provided, map it
   const activeSteps = React.useMemo(() => {
     if (steps && steps.length > 0) {
       return steps;
@@ -46,11 +44,6 @@ export function StepProgress({
     });
   }, [steps, stages, currentStageIndex, isCompleted, isError]);
 
-  const completedCount = isCompleted
-    ? activeSteps.length
-    : activeSteps.filter((s) => s.status === "completed").length;
-  const percent = activeSteps.length > 0 ? (completedCount / activeSteps.length) * 100 : 0;
-
   const currentStageName =
     activeSteps[currentStageIndex]?.name || (isCompleted ? "Completed" : "In progress");
 
@@ -58,64 +51,70 @@ export function StepProgress({
     <div
       role="status"
       aria-live="polite"
-      className="space-y-4 rounded-lg border border-cyan-900/50 bg-zinc-900/80 p-5 shadow-lg backdrop-blur-sm"
+      className="w-full pt-4 pb-2"
     >
-      <div className="flex items-center justify-between text-xs text-zinc-300">
-        <span className="font-semibold text-cyan-400 flex items-center gap-1.5">
+      {/* Status announcement line */}
+      <div className="flex items-center justify-between text-xs text-on-surface-variant mb-2.5">
+        <span className="flex items-center gap-1.5 font-medium">
           {isCompleted ? (
-            <>
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              Analysis complete — generating report...
-            </>
+            <span className="text-primary flex items-center gap-1 font-semibold">
+              <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
+              Analysis complete — redirecting to report...
+            </span>
           ) : isError ? (
-            <>
-              <AlertCircle className="w-4 h-4 text-red-400" />
-              Scan pipeline interrupted
-            </>
+            <span className="text-error flex items-center gap-1 font-semibold">
+              <AlertCircle className="w-3.5 h-3.5 text-error" />
+              Pipeline interrupted
+            </span>
           ) : (
-            <>
-              <Loader2 className="w-4 h-4 text-cyan-400 animate-spin" />
+            <span className="text-primary flex items-center gap-1.5">
+              <Loader2 className="w-3.5 h-3.5 text-primary animate-spin" />
               Stage {Math.min(currentStageIndex + 1, activeSteps.length)} of {activeSteps.length}:{" "}
-              <strong className="text-zinc-100">{currentStageName}</strong>
-            </>
+              <strong className="text-on-surface font-semibold">{currentStageName}</strong>
+            </span>
           )}
         </span>
-        <span className="font-mono text-zinc-400 text-[11px]">
-          {completedCount} / {activeSteps.length} stages
+        <span className="font-mono text-[11px] text-on-surface-variant">
+          {isCompleted ? activeSteps.length : currentStageIndex + 1} / {activeSteps.length}
         </span>
       </div>
 
-      <Progress value={isCompleted ? 100 : Math.max(10, percent)} className="h-2 bg-zinc-800" />
-
-      {/* Responsive Stages Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-1">
+      {/* 5-Step Strip from Stitch Design */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 sm:gap-3 items-center">
         {activeSteps.map((step, idx) => {
           const isDone = step.status === "completed";
           const isRunning = step.status === "running";
           const isFailed = step.status === "failed";
 
+          let dotClass = "bg-surface-variant";
+          let textClass = "text-on-surface-variant";
+          let barClass = "bg-surface-container-high";
+
+          if (isDone) {
+            dotClass = "bg-primary";
+            textClass = "text-primary font-semibold";
+            barClass = "bg-primary";
+          } else if (isRunning) {
+            dotClass = "bg-primary ring-4 ring-primary/20 animate-pulse";
+            textClass = "text-primary font-semibold";
+            barClass = "bg-primary-container";
+          } else if (isFailed) {
+            dotClass = "bg-error";
+            textClass = "text-error font-semibold";
+            barClass = "bg-error-container";
+          }
+
           return (
-            <div
-              key={idx}
-              className={`flex items-center gap-2 p-2 rounded-md text-xs border transition-all ${
-                isDone
-                  ? "bg-zinc-950/80 border-emerald-900/50 text-emerald-300"
-                  : isRunning
-                  ? "bg-cyan-950/40 border-cyan-600 text-cyan-200 ring-1 ring-cyan-500/50"
-                  : isFailed
-                  ? "bg-red-950/40 border-red-800 text-red-300"
-                  : "bg-zinc-950/30 border-zinc-800/80 text-zinc-500"
-              }`}
-            >
-              {isDone && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />}
-              {isRunning && <Loader2 className="w-3.5 h-3.5 text-cyan-400 animate-spin shrink-0" />}
-              {isFailed && <span className="text-red-400 font-bold shrink-0">&times;</span>}
-              {!isDone && !isRunning && !isFailed && (
-                <span className="w-3.5 h-3.5 rounded-full border border-zinc-700 shrink-0 flex items-center justify-center text-[9px] font-mono">
-                  {idx + 1}
+            <div key={idx} className="flex flex-col gap-1.5">
+              <div className="flex items-center gap-1.5">
+                <span className={`w-2 h-2 rounded-full shrink-0 transition-all ${dotClass}`} />
+                <span
+                  className={`text-[11px] font-mono tracking-wider uppercase truncate ${textClass}`}
+                >
+                  {idx + 1}. {step.name}
                 </span>
-              )}
-              <span className="truncate font-medium">{step.name}</span>
+              </div>
+              <div className={`h-1 w-full rounded-full transition-all duration-300 ${barClass}`} />
             </div>
           );
         })}
