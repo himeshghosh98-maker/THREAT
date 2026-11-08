@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Threat Intelligence & Digital Trust System — QA Audit Report</title>
+<style>
+  @page {
+    size: A4;
+    margin: 16mm 14mm 16mm 14mm;
+    @bottom-right {
+      content: counter(page) " / " counter(pages);
+      font-size: 8pt;
+      color: #64748b;
+    }
+  }
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: #0f172a;
+    background-color: #ffffff;
+    line-height: 1.5;
+    font-size: 9.5pt;
+    margin: 0;
+    padding: 0;
+  }
+  h1 {
+    font-size: 18pt;
+    font-weight: 800;
+    color: #0f172a;
+    margin-top: 0;
+    margin-bottom: 4px;
+    letter-spacing: -0.02em;
+    border-bottom: 2px solid #0284c7;
+    padding-bottom: 8px;
+  }
+  h2 {
+    font-size: 13pt;
+    font-weight: 700;
+    color: #1e293b;
+    margin-top: 18px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 4px;
+    page-break-after: avoid;
+  }
+  h3 {
+    font-size: 10.5pt;
+    font-weight: 600;
+    color: #334155;
+    margin-top: 12px;
+    margin-bottom: 6px;
+    page-break-after: avoid;
+  }
+  p, ul, ol {
+    margin-top: 4px;
+    margin-bottom: 8px;
+  }
+  ul {
+    padding-left: 20px;
+  }
+  li {
+    margin-bottom: 3px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 6px;
+    margin-bottom: 12px;
+    font-size: 8.5pt;
+    page-break-inside: auto;
+  }
+  tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+  th, td {
+    border: 1px solid #cbd5e1;
+    padding: 5px 7px;
+    text-align: left;
+    vertical-align: top;
+  }
+  th {
+    background-color: #f1f5f9;
+    font-weight: 600;
+    color: #1e293b;
+  }
+  tr:nth-child(even) td {
+    background-color: #f8fafc;
+  }
+  code, pre {
+    font-family: "JetBrains Mono", Consolas, Menlo, Monaco, monospace;
+    font-size: 8pt;
+  }
+  code {
+    background-color: #f1f5f9;
+    padding: 1px 4px;
+    border-radius: 3px;
+    border: 1px solid #e2e8f0;
+  }
+  pre {
+    background-color: #0f172a;
+    color: #f8fafc;
+    padding: 8px 10px;
+    border-radius: 4px;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+    margin: 6px 0;
+    page-break-inside: avoid;
+  }
+  .badge {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 7.5pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .badge-blocker { background-color: #fee2e2; color: #991b1b; border: 1px solid #f87171; }
+  .badge-high { background-color: #ffedd5; color: #9a3412; border: 1px solid #fb923c; }
+  .badge-medium { background-color: #fef9c3; color: #854d0e; border: 1px solid #facc15; }
+  .badge-low { background-color: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+  .badge-pass { background-color: #dcfce7; color: #166534; border: 1px solid #86efac; }
+  .badge-fail { background-color: #fee2e2; color: #991b1b; border: 1px solid #f87171; }
+  .badge-partial { background-color: #fef9c3; color: #854d0e; border: 1px solid #facc15; }
+
+  .meta-box {
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-left: 4px solid #0284c7;
+    padding: 8px 12px;
+    border-radius: 0 4px 4px 0;
+    margin-bottom: 14px;
+    font-size: 8.5pt;
+  }
+  .meta-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px 16px;
+  }
+  .bug-card {
+    border: 1px solid #cbd5e1;
+    border-left: 4px solid #ef4444;
+    border-radius: 4px;
+    padding: 8px 10px;
+    margin-bottom: 10px;
+    background-color: #ffffff;
+    page-break-inside: avoid;
+  }
+  .bug-card.high { border-left-color: #f97316; }
+  .bug-card.medium { border-left-color: #eab308; }
+  .bug-card.low { border-left-color: #64748b; }
+  .bug-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+  .bug-title {
+    font-size: 10pt;
+    font-weight: 700;
+    color: #0f172a;
+  }
+  .gallery {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin: 8px 0;
+    page-break-inside: avoid;
+  }
+  .gallery-item {
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    overflow: hidden;
+    background: #f8fafc;
+    text-align: center;
+  }
+  .gallery-item img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .gallery-caption {
+    font-size: 7.5pt;
+    color: #64748b;
+    padding: 4px;
+    font-weight: 600;
+  }
+  .page-break {
+    page-break-before: always;
+  }
+</style>
+</head>
+<body>
+
+<h1>Threat Intelligence & Digital Trust System — QA Audit Report</h1>
+
+<div class="meta-box">
+  <div class="meta-grid">
+    <div><strong>Target Repository:</strong> github.com/himeshghosh98-maker/THREAT</div>
+    <div><strong>Audit Date:</strong> November 9, 2026</div>
+    <div><strong>Branch:</strong> main (Commit: <code>df879c9</code>)</div>
+    <div><strong>Environment:</strong> Windows 11 Pro | Python 3.12.13 | Node v24.19.0</div>
+    <div><strong>Backend Baseline:</strong> 130 tests passing, 5 Hardhat passing</div>
+    <div><strong>Frontend Baseline:</strong> Next.js 16 (Turbopack) | ESLint 0 errors</div>
+  </div>
+</div>
+
+<h2>1. Executive Summary</h2>
+
+<h3>1.1 Audit Scope & Rules</h3>
+<p>
+This audit evaluated the full end-to-end integration across three Git workspaces: <code>kernal-v2</code> (main integration), <code>wt-backend</code> (FastAPI, Web3, analyzers), and <code>wt-frontend</code> (Next.js dashboard). All tests conformed to strict product brief principles: zero "safe" verdicts, deterministic-first risk classification, strict SSRF boundaries, and on-chain verification without storing raw URLs or PII.
+</p>
+
+<h3>1.2 Summary Bug Counts</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Severity</th>
+      <th>Backend (Codex)</th>
+      <th>Frontend (Antigravity)</th>
+      <th>Root / Docs (Freebuff)</th>
+      <th>Total</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><span class="badge badge-blocker">BLOCKER</span></td>
+      <td>2</td>
+      <td>0</td>
+      <td>0</td>
+      <td><strong>2</strong></td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-high">HIGH</span></td>
+      <td>1</td>
+      <td>1</td>
+      <td>0</td>
+      <td><strong>2</strong></td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-medium">MEDIUM</span></td>
+      <td>0</td>
+      <td>1</td>
+      <td>2</td>
+      <td><strong>3</strong></td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-low">LOW</span></td>
+      <td>1</td>
+      <td>0</td>
+      <td>0</td>
+      <td><strong>1</strong></td>
+    </tr>
+    <tr style="font-weight: bold; background-color: #f1f5f9;">
+      <td>Total</td>
+      <td>4</td>
+      <td>2</td>
+      <td>2</td>
+      <td><strong>8</strong></td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>1.3 Top 5 Blockers & Critical Issues</h3>
+<ol>
+  <li><strong>B-001 [BLOCKER]</strong>: <code>GET /api/v1/reports</code> returns HTTP 503 <code>chain_unavailable</code> when reports contain contract references from previous chain runs.</li>
+  <li><strong>B-002 [BLOCKER]</strong>: Oversensitive threshold in <code>app/core/risk.py</code> flags benign sites (<code>github.com</code>, <code>google.com</code>) as <code>suspicious</code> (False Positives).</li>
+  <li><strong>B-003 [HIGH]</strong>: Unhandled <code>NXDOMAIN</code> on <code>AAAA</code> DNS records crashes <code>safe_resolve</code>, failing outbound HTTP/TLS checks for domains without IPv6.</li>
+  <li><strong>B-004 [HIGH]</strong>: Frontend UI hardcodes fake network ("Arbitrum Sepolia", "Arbitrum Rollup") and fake hashing ("SHA-256") claims.</li>
+  <li><strong>B-006 [MEDIUM]</strong>: Root <code>README.md</code> terminates with <code>## How to run: TODO</code>, omitting unified run instructions.</li>
+</ol>
+
+<h3>1.4 Hackathon Judging Category Estimates (0 to 10)</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Judging Category</th>
+      <th>Weight</th>
+      <th>Score</th>
+      <th>Justification</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Cybersecurity & Threat Detection</strong></td>
+      <td>30%</td>
+      <td><strong>7.5 / 10</strong></td>
+      <td>Strong SSRF containment and passive headers; docked for DNS AAAA failure & benign false positives.</td>
+    </tr>
+    <tr>
+      <td><strong>AI Implementation</strong></td>
+      <td>20%</td>
+      <td><strong>8.5 / 10</strong></td>
+      <td>Strict prompt delimiter isolation, regex post-validation, and PII masking for message analysis.</td>
+    </tr>
+    <tr>
+      <td><strong>Web3 Integration</strong></td>
+      <td>20%</td>
+      <td><strong>8.0 / 10</strong></td>
+      <td>Solidity registry with event history & tamper detection; docked for 503 crash on stale contracts.</td>
+    </tr>
+    <tr>
+      <td><strong>Technical Implementation</strong></td>
+      <td>20%</td>
+      <td><strong>8.0 / 10</strong></td>
+      <td>130 backend tests & 5 contract tests passing; docked for empty root docker-compose and unfinished README.</td>
+    </tr>
+    <tr>
+      <td><strong>Innovation & UX</strong></td>
+      <td>10%</td>
+      <td><strong>8.5 / 10</strong></td>
+      <td>High-fidelity cybersecurity aesthetic, clear disclaimers, and interactive on-chain verification.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="page-break"></div>
+
+<h2>2. Live Scan Results Table</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Target / Input</th>
+      <th>Category</th>
+      <th>Expected</th>
+      <th>Actual</th>
+      <th>Score</th>
+      <th>Status</th>
+      <th>Failed Checks / Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>https://github.com</code></td>
+      <td>Benign</td>
+      <td>low_risk</td>
+      <td>suspicious</td>
+      <td>8</td>
+      <td><span class="badge badge-fail">FAIL</span></td>
+      <td>False Positive: DNS TTL low indicator triggered suspicious threshold (B-002, B-003)</td>
+    </tr>
+    <tr>
+      <td><code>https://www.google.com</code></td>
+      <td>Benign</td>
+      <td>low_risk</td>
+      <td>suspicious</td>
+      <td>8</td>
+      <td><span class="badge badge-fail">FAIL</span></td>
+      <td>False Positive: DNS TTL low indicator triggered suspicious threshold (B-002, B-003)</td>
+    </tr>
+    <tr>
+      <td><code>https://en.wikipedia.org</code></td>
+      <td>Benign</td>
+      <td>low_risk</td>
+      <td>suspicious</td>
+      <td>8</td>
+      <td><span class="badge badge-fail">FAIL</span></td>
+      <td>False Positive: DNS TTL low indicator triggered suspicious threshold (B-002, B-003)</td>
+    </tr>
+    <tr>
+      <td><code>https://www.sbi.co.in</code></td>
+      <td>Benign</td>
+      <td>low_risk</td>
+      <td>suspicious</td>
+      <td>8</td>
+      <td><span class="badge badge-fail">FAIL</span></td>
+      <td>False Positive: DNS TTL low indicator triggered suspicious threshold (B-002, B-003)</td>
+    </tr>
+    <tr>
+      <td><code>https://www.iitkgp.ac.in</code></td>
+      <td>Benign</td>
+      <td>low_risk</td>
+      <td>suspicious</td>
+      <td>8</td>
+      <td><span class="badge badge-fail">FAIL</span></td>
+      <td>False Positive: DNS TTL low indicator triggered suspicious threshold (B-002, B-003)</td>
+    </tr>
+    <tr>
+      <td><code>https://paypa1.com</code></td>
+      <td>Lookalike</td>
+      <td>suspicious+</td>
+      <td>suspicious</td>
+      <td>43</td>
+      <td><span class="badge badge-pass">PASS</span></td>
+      <td>Correctly detected typosquatting on PayPal brand</td>
+    </tr>
+    <tr>
+      <td><code>https://g00gle-login.com</code></td>
+      <td>Lookalike</td>
+      <td>suspicious+</td>
+      <td>suspicious</td>
+      <td>43</td>
+      <td><span class="badge badge-pass">PASS</span></td>
+      <td>Correctly detected typosquatting and login target</td>
+    </tr>
+    <tr>
+      <td><code>http://sbi-secure-login.xyz</code></td>
+      <td>Lookalike</td>
+      <td>suspicious+</td>
+      <td>suspicious</td>
+      <td>43</td>
+      <td><span class="badge badge-pass">PASS</span></td>
+      <td>Correctly detected financial brand impersonation</td>
+    </tr>
+    <tr>
+      <td><code>https://xn--pypal-4ve.com</code></td>
+      <td>Homograph</td>
+      <td>suspicious+</td>
+      <td>high_risk</td>
+      <td>78</td>
+      <td><span class="badge badge-pass">PASS</span></td>
+      <td>Correctly flagged punycode Cyrillic homograph</td>
+    </tr>
+    <tr>
+      <td><code>http://127.0.0.1</code></td>
+      <td>SSRF Attack</td>
+      <td>rejected</td>
+      <td>rejected</td>
+      <td>-</td>
+      <td><span class="badge badge-pass">PASS</span></td>
+      <td>HTTP 422: IPv4 loopback blocked before connection</td>
+    </tr>
+    <tr>
+      <td><code>http://localhost</code></td>
+      <td>SSRF Attack</td>
+      <td>rejected</td>
+      <td>rejected</td>
+      <td>-</td>
+      <td><span class="badge badge-pass">PASS</span></td>
+      <td>HTTP 422: Localhost hostname blocked</td>
+    </tr>
+    <tr>
+      <td><code>http://169.254.169.254/...</code></td>
+      <td>SSRF Attack</td>
+      <td>rejected</td>
+      <td>rejected</td>
+      <td>-</td>
+      <td><span class="badge badge-pass">PASS</span></td>
+      <td>HTTP 422: Cloud metadata IP blocked</td>
+    </tr>
+    <tr>
+      <td><code>http://2130706433</code></td>
+      <td>SSRF Attack</td>
+      <td>rejected</td>
+      <td>rejected</td>
+      <td>-</td>
+      <td><span class="badge badge-pass">PASS</span></td>
+      <td>HTTP 422: Dword/decimal notation blocked</td>
+    </tr>
+    <tr>
+      <td><code>http://[::1]</code></td>
+      <td>SSRF Attack</td>
+      <td>rejected</td>
+      <td>rejected</td>
+      <td>-</td>
+      <td><span class="badge badge-pass">PASS</span></td>
+      <td>HTTP 422: IPv6 loopback blocked</td>
+    </tr>
+    <tr>
+      <td><code>file:///etc/passwd</code></td>
+      <td>SSRF Attack</td>
+      <td>rejected</td>
+      <td>rejected</td>
+      <td>-</td>
+      <td><span class="badge badge-pass">PASS</span></td>
+      <td>HTTP 422: Non-HTTP scheme rejected</td>
+    </tr>
+    <tr>
+      <td><code>http://good.com@127.0.0.1</code></td>
+      <td>SSRF Attack</td>
+      <td>rejected</td>
+      <td>rejected</td>
+      <td>-</td>
+      <td><span class="badge badge-pass">PASS</span></td>
+      <td>HTTP 422: Userinfo credentials spoofing blocked</td>
+    </tr>
+    <tr>
+      <td><code>https://zzqx-test-12345.com</code></td>
+      <td>Nonsense</td>
+      <td>inconclusive</td>
+      <td>inconclusive</td>
+      <td>0</td>
+      <td><span class="badge badge-pass">PASS</span></td>
+      <td>Non-resolving domain cleanly labeled inconclusive</td>
+    </tr>
+    <tr>
+      <td>KYC scam SMS with link</td>
+      <td>Message</td>
+      <td>suspicious</td>
+      <td>suspicious</td>
+      <td>38</td>
+      <td><span class="badge badge-pass">PASS</span></td>
+      <td>Detected urgency cues & suspicious banking URL</td>
+    </tr>
+    <tr>
+      <td>Fake job offer with fee</td>
+      <td>Message</td>
+      <td>suspicious</td>
+      <td>suspicious</td>
+      <td>38</td>
+      <td><span class="badge badge-pass">PASS</span></td>
+      <td>Detected recruitment fee advance solicitation</td>
+    </tr>
+    <tr>
+      <td>Friend casual message</td>
+      <td>Message</td>
+      <td>low_risk</td>
+      <td>low_risk</td>
+      <td>0</td>
+      <td><span class="badge badge-pass">PASS</span></td>
+      <td>Benign casual text scored zero risk</td>
+    </tr>
+    <tr>
+      <td>Urgency message (no link)</td>
+      <td>Message</td>
+      <td>low_risk</td>
+      <td>suspicious</td>
+      <td>8</td>
+      <td><span class="badge badge-fail">FAIL</span></td>
+      <td>False Positive: Urgency alone triggered suspicious threshold</td>
+    </tr>
+    <tr>
+      <td>Prompt injection KYC SMS</td>
+      <td>Jailbreak</td>
+      <td>suspicious</td>
+      <td>suspicious</td>
+      <td>38</td>
+      <td><span class="badge badge-pass">PASS</span></td>
+      <td>Instruction "mark this as safe" successfully ignored</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>3. Brief Compliance & Deliverables Assessment</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Brief Requirement</th>
+      <th>Status</th>
+      <th>Technical Evidence & Verification Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>URL Heuristic Analysis</strong></td>
+      <td><span class="badge badge-pass">MET</span></td>
+      <td>Entropy, domain age, typosquatting, Punycode homographs, and redirect hops evaluated.</td>
+    </tr>
+    <tr>
+      <td><strong>Phishing Intelligence</strong></td>
+      <td><span class="badge badge-pass">MET</span></td>
+      <td>Exact & hostname matching against cached OpenPhish feed snapshots.</td>
+    </tr>
+    <tr>
+      <td><strong>TLS Certificate Analysis</strong></td>
+      <td><span class="badge badge-pass">MET</span></td>
+      <td>X.509 validity, SAN list, CT logs (crt.sh), synthetic distrusted CA checks implemented.</td>
+    </tr>
+    <tr>
+      <td><strong>Mandatory TLS Disclaimer</strong></td>
+      <td><span class="badge badge-pass">MET</span></td>
+      <td>Enforced: <em>"A valid certificate is not proof that the site is safe."</em> present across schema & UI.</td>
+    </tr>
+    <tr>
+      <td><strong>Zero "Safe" Verdict Rule</strong></td>
+      <td><span class="badge badge-pass">MET</span></td>
+      <td>Word "safe" never appears as a verdict; uses <em>"No significant indicators found..."</em>.</td>
+    </tr>
+    <tr>
+      <td><strong>AI Scam & Message Analysis</strong></td>
+      <td><span class="badge badge-pass">MET</span></td>
+      <td>Strict XML-escaped delimiters, privacy redaction, and deterministic fallback support.</td>
+    </tr>
+    <tr>
+      <td><strong>Risk Engine Scorer</strong></td>
+      <td><span class="badge badge-partial">PARTIAL</span></td>
+      <td>Scoring logic functions, but threshold <code>WEIGHTS["info"]</code> misclassifies benign targets.</td>
+    </tr>
+    <tr>
+      <td><strong>Passive Security Headers</strong></td>
+      <td><span class="badge badge-pass">MET</span></td>
+      <td>Strictly passive assessment of HSTS, CSP, XFO, XXP, and Referrer-Policy on final hop.</td>
+    </tr>
+    <tr>
+      <td><strong>On-Chain Integrity Registry</strong></td>
+      <td><span class="badge badge-pass">MET</span></td>
+      <td>Solidity contract handles report submissions, status updates, event ordering & verify checks.</td>
+    </tr>
+    <tr>
+      <td><strong>No Raw URLs / PII On-Chain</strong></td>
+      <td><span class="badge badge-pass">MET</span></td>
+      <td>Canonical JSON representation strips URLs & PII; only Keccak-256 digest is stored on-chain.</td>
+    </tr>
+    <tr>
+      <td><strong>Dashboard (4 Screens)</strong></td>
+      <td><span class="badge badge-pass">MET</span></td>
+      <td>Full functional Next.js dashboard: Scan (<code>/</code>), Report, Intel, and Verify.</td>
+    </tr>
+    <tr>
+      <td><strong>Documentation & Orchestration</strong></td>
+      <td><span class="badge badge-partial">PARTIAL</span></td>
+      <td>Root README ends in <code>TODO</code>; root <code>docker-compose.yml</code> is an unimplemented comment stub.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="page-break"></div>
+
+<h2>4. Captured Audit Screenshots</h2>
+
+<div class="gallery">
+  <div class="gallery-item">
+    <img src="file:///C:/Users/Himesh/Desktop/kernal-fresh/kernal-v2/docs/audit-screenshots/scan_page.png" alt="Scan Page">
+    <div class="gallery-caption">Fig 1. Threat Scanner Interface (Desktop 1280x800)</div>
+  </div>
+  <div class="gallery-item">
+    <img src="file:///C:/Users/Himesh/Desktop/kernal-fresh/kernal-v2/docs/audit-screenshots/report_page.png" alt="Report Page">
+    <div class="gallery-caption">Fig 2. Detailed Threat Report & Heuristic Evidence</div>
+  </div>
+  <div class="gallery-item">
+    <img src="file:///C:/Users/Himesh/Desktop/kernal-fresh/kernal-v2/docs/audit-screenshots/intel_page.png" alt="Intelligence Page">
+    <div class="gallery-caption">Fig 3. Intelligence Clusters & Infrastructure Correlations</div>
+  </div>
+  <div class="gallery-item">
+    <img src="file:///C:/Users/Himesh/Desktop/kernal-fresh/kernal-v2/docs/audit-screenshots/verify_with_id.png" alt="Verify Page">
+    <div class="gallery-caption">Fig 4. On-Chain Cryptographic Integrity Verification</div>
+  </div>
+</div>
+
+<div class="gallery" style="grid-template-columns: 1fr 1fr; margin-top: 10px;">
+  <div class="gallery-item" style="max-width: 260px; margin: 0 auto;">
+    <img src="file:///C:/Users/Himesh/Desktop/kernal-fresh/kernal-v2/docs/audit-screenshots/scan_page_mobile.png" alt="Mobile Scan">
+    <div class="gallery-caption">Fig 5. Responsive Mobile Scanner (390px)</div>
+  </div>
+  <div class="gallery-item" style="max-width: 260px; margin: 0 auto;">
+    <img src="file:///C:/Users/Himesh/Desktop/kernal-fresh/kernal-v2/docs/audit-screenshots/report_page_mobile.png" alt="Mobile Report">
+    <div class="gallery-caption">Fig 6. Responsive Mobile Threat Breakdown (390px)</div>
+  </div>
+</div>
+
+<div class="page-break"></div>
+
+<h2>5. Comprehensive Bug List & Fix Prompts</h2>
+
+<div class="bug-card">
+  <div class="bug-header">
+    <span class="bug-title">B-001: <code>GET /api/v1/reports</code> crashes with HTTP 503 on stale on-chain deployments</span>
+    <div>
+      <span class="badge badge-blocker">BLOCKER</span>
+      <span class="badge" style="background:#e0f2fe; color:#0369a1; border:1px solid #7dd3fc;">Codex (Backend)</span>
+    </div>
+  </div>
+  <p><strong>Evidence:</strong> <code>GET /api/v1/reports?risk=suspicious</code> returns HTTP 503 <code>chain_unavailable</code> when reports reference previously deployed contracts.</p>
+  <p><strong>Root Cause:</strong> <code>current_report()</code> in <code>app/web3/registry.py:148</code> eagerly calls <code>observed()</code> for every report with a receipt. If that contract address does not exist on the active chain, it raises <code>ChainUnavailable</code>, crashing the entire listing.</p>
+  <p><strong>Expected:</strong> Wrap <code>observed()</code> in try/except <code>ChainUnavailable</code> and fall back to <code>read_report(row)</code>.</p>
+  <pre>REPO CONTEXT: origin https://github.com/himeshghosh98-maker/THREAT, folder wt-backend, branch backend-dev, edits in backend/ only. Run git pull and git merge main. Commit message: "fix B-001: handle chain unavailable gracefully in current_report". Push to backend-dev.
+BUG: GET /api/v1/reports crashes with HTTP 503 when any report was published on a previous local chain deployment.
+IN backend/app/web3/registry.py, in current_report(row, settings), wrap the observed(row, settings)[0] call in a try/except ChainUnavailable block: on exception, return read_report(row).
+DO NOT change API contract shapes, SSRF checks, or publish/verify routes.
+REGRESSION TEST: Add a test in tests/test_c4.py verifying list_reports returns 200 when a report in DB has a stale contract address.
+Print only commit hash and a 3-line summary.</pre>
+</div>
+
+<div class="bug-card">
+  <div class="bug-header">
+    <span class="bug-title">B-002: Oversensitive classification threshold flags benign domains as <code>suspicious</code></span>
+    <div>
+      <span class="badge badge-blocker">BLOCKER</span>
+      <span class="badge" style="background:#e0f2fe; color:#0369a1; border:1px solid #7dd3fc;">Codex (Backend)</span>
+    </div>
+  </div>
+  <p><strong>Evidence:</strong> Scanning <code>github.com</code> or <code>google.com</code> returns score 8 and classification <code>suspicious</code>.</p>
+  <p><strong>Root Cause:</strong> <code>app/core/risk.py:16</code> sets <code>suspicious</code> whenever <code>score >= WEIGHTS["info"]</code> (score >= 2). A single informational indicator triggers a false positive.</p>
+  <p><strong>Expected:</strong> Scores < 30 should be <code>low_risk</code> (or <code>inconclusive</code> if checks failed); require score >= 30 for <code>suspicious</code>.</p>
+  <pre>REPO CONTEXT: origin https://github.com/himeshghosh98-maker/THREAT, folder wt-backend, branch backend-dev, edits in backend/ only. Run git pull and git merge main. Commit message: "fix B-002: adjust suspicious risk score threshold". Push to backend-dev.
+BUG: Benign domains with minor DNS/header indicators (score 8) are classified as suspicious because threshold is score >= WEIGHTS["info"] (2).
+IN backend/app/core/risk.py: change condition to elif score >= 30: classification = "suspicious". For scores < 30, classify as "inconclusive" if failed or not completed, else "low_risk".
+DO NOT change indicator weights or confirmed_malicious rules.
+REGRESSION TEST: Ensure score_risk([], ["DNS"], []) returns low_risk and score_risk([Indicator(..., severity='low')], ["DNS"], []) returns low_risk.
+Print only commit hash and a 3-line summary.</pre>
+</div>
+
+<div class="bug-card high">
+  <div class="bug-header">
+    <span class="bug-title">B-003: Unhandled <code>NXDOMAIN</code> in <code>dns_answer</code> breaks <code>safe_resolve</code></span>
+    <div>
+      <span class="badge badge-high">HIGH</span>
+      <span class="badge" style="background:#e0f2fe; color:#0369a1; border:1px solid #7dd3fc;">Codex (Backend)</span>
+    </div>
+  </div>
+  <p><strong>Evidence:</strong> Resolving AAAA records on domains without IPv6 throws <code>NXDOMAIN</code>, causing <code>safe_resolve</code> and all outbound HTTP/TLS checks to fail.</p>
+  <p><strong>Root Cause:</strong> <code>app/core/ssrf.py:65</code> does not catch <code>NXDOMAIN</code> or <code>NoAnswer</code> during <code>dns.asyncresolver.resolve()</code>.</p>
+  <p><strong>Expected:</strong> Catch DNS exceptions and return <code>[]</code> so IPv4 A records are used successfully.</p>
+  <pre>REPO CONTEXT: origin https://github.com/himeshghosh98-maker/THREAT, folder wt-backend, branch backend-dev, edits in backend/ only. Run git pull and git merge main. Commit message: "fix B-003: catch NXDOMAIN in ssrf dns_answer". Push to backend-dev.
+BUG: safe_resolve crashes with NXDOMAIN on domains lacking AAAA records, breaking safe_fetch and TLS checks.
+IN backend/app/core/ssrf.py, in dns_answer(host, record), wrap the dns.asyncresolver.resolve call in try/except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer, dns.exception.DNSException): and return [].
+DO NOT remove public_ip validation or SSRF ipaddress checks.
+REGRESSION TEST: Verify safe_resolve resolves domains having only IPv4 A records without throwing NXDOMAIN.
+Print only commit hash and a 3-line summary.</pre>
+</div>
+
+<div class="bug-card high">
+  <div class="bug-header">
+    <span class="bug-title">B-004: Frontend hardcodes "Arbitrum Sepolia" and fake SHA-256 claims</span>
+    <div>
+      <span class="badge badge-high">HIGH</span>
+      <span class="badge" style="background:#f3e8ff; color:#7e22ce; border:1px solid #d8b4fe;">Antigravity (Frontend)</span>
+    </div>
+  </div>
+  <p><strong>Evidence:</strong> UI components display "Arbitrum Sepolia", "Arbitrum Rollup", and "SHA-256 fingerprint" while backend runs on Ethereum / Hardhat with Keccak-256.</p>
+  <p><strong>Root Cause:</strong> Static placeholder text left in <code>OnchainTab.tsx</code>, <code>SummaryStrip.tsx</code>, and <code>PublishConfirmModal.tsx</code>.</p>
+  <p><strong>Expected:</strong> Dynamically render <code>onchain.network || 'Ethereum Sepolia / Local'</code> and specify <code>Keccak-256</code>.</p>
+  <pre>REPO CONTEXT: origin https://github.com/himeshghosh98-maker/THREAT, folder wt-frontend, branch frontend-dev, edits in frontend/ only. Run git pull and git merge main. Commit message: "fix B-004: use dynamic onchain network and keccak-256 wording". Push to frontend-dev.
+BUG: Hardcoded 'Arbitrum Sepolia', 'Arbitrum Rollup', and 'SHA-256' appear in UI components.
+IN frontend/components/report/OnchainTab.tsx, PublishConfirmModal.tsx, SummaryStrip.tsx, and app/intel/page.tsx: replace 'Arbitrum Sepolia' defaults with onchain.network || 'Ethereum Sepolia / Local', replace 'SHA-256' with 'Keccak-256', and replace 'Arbitrum Rollup' with 'EVM Smart Contract'.
+DO NOT break verify or publish API integrations.
+REGRESSION TEST: Run npm run lint && npm run build.
+Print only commit hash and a 3-line summary.</pre>
+</div>
+
+<div class="bug-card medium">
+  <div class="bug-header">
+    <span class="bug-title">B-005: Leftover fake statistics chips ("SOC Tier-1", "Latency 18ms") in UI</span>
+    <div>
+      <span class="badge badge-medium">MEDIUM</span>
+      <span class="badge" style="background:#f3e8ff; color:#7e22ce; border:1px solid #d8b4fe;">Antigravity (Frontend)</span>
+    </div>
+  </div>
+  <p><strong>Evidence:</strong> Sidebar renders static <code>Latency 18ms</code>; report SidePanel renders <code>SOC Tier-1</code>.</p>
+  <p><strong>Root Cause:</strong> Unlinked placeholder chips from design mockup.</p>
+  <p><strong>Expected:</strong> Replace with realistic status like <code>System Online</code> and <code>Heuristic Engine</code>.</p>
+  <pre>REPO CONTEXT: origin https://github.com/himeshghosh98-maker/THREAT, folder wt-frontend, branch frontend-dev, edits in frontend/ only. Run git pull and git merge main. Commit message: "fix B-005: remove static fake latency and soc tier chips". Push to frontend-dev.
+BUG: Sidebar displays fake static 'Latency 18ms' and report SidePanel displays 'SOC Tier-1'.
+IN frontend/components/shell/Sidebar.tsx: remove or replace 'Latency 18ms' with 'System Online'. IN frontend/components/report/SidePanel.tsx: replace 'SOC Tier-1' with 'Heuristic Engine'.
+DO NOT modify layout geometry or component exports.
+REGRESSION TEST: Run npm run lint && npm run build.
+Print only commit hash and a 3-line summary.</pre>
+</div>
+
+<div class="bug-card medium">
+  <div class="bug-header">
+    <span class="bug-title">B-006: Root <code>README.md</code> terminates with incomplete <code>TODO</code> section</span>
+    <div>
+      <span class="badge badge-medium">MEDIUM</span>
+      <span class="badge" style="background:#f1f5f9; color:#334155; border:1px solid #94a3b8;">Freebuff (Docs)</span>
+    </div>
+  </div>
+  <p><strong>Evidence:</strong> <code>README.md:25</code> ends with <code>## How to run: TODO</code>.</p>
+  <p><strong>Root Cause:</strong> Unified multi-workspace setup instructions not written.</p>
+  <p><strong>Expected:</strong> Comprehensive documentation for chain, backend, and frontend execution.</p>
+  <pre>REPO CONTEXT: origin https://github.com/himeshghosh98-maker/THREAT, folder kernal-v2, branch main, root docs edits only. Commit message: "docs: complete root README quickstart guide". Push to main.
+BUG: Root README.md line 25 ends with '## How to run: TODO'.
+IN kernal-v2/README.md: replace '## How to run: TODO' with comprehensive setup instructions:
+1. Local Chain & Contracts (npx hardhat node, scripts/start_local_chain.ps1)
+2. FastAPI Backend (.venv setup, requirements.txt, scripts.seed, uvicorn)
+3. Next.js Frontend (npm install, npm run dev)
+DO NOT edit files in backend/ or frontend/.
+Print only commit hash and a 3-line summary.</pre>
+</div>
+
+<div class="bug-card medium">
+  <div class="bug-header">
+    <span class="bug-title">B-007: Empty <code>docker-compose.yml</code> placeholder fails orchestration</span>
+    <div>
+      <span class="badge badge-medium">MEDIUM</span>
+      <span class="badge" style="background:#f1f5f9; color:#334155; border:1px solid #94a3b8;">Freebuff (Repo)</span>
+    </div>
+  </div>
+  <p><strong>Evidence:</strong> <code>docker-compose.yml</code> contains only 2 lines of comments and no services.</p>
+  <p><strong>Root Cause:</strong> Unimplemented container definition.</p>
+  <p><strong>Expected:</strong> Working multi-container configuration for backend and frontend.</p>
+  <pre>REPO CONTEXT: origin https://github.com/himeshghosh98-maker/THREAT, folder kernal-v2, branch main, root edits only. Commit message: "feat: implement working root docker-compose.yml". Push to main.
+BUG: docker-compose.yml is an empty 2-line placeholder.
+IN kernal-v2/docker-compose.yml: define services for 'backend' (context ./backend, port 8000:8000, env CHAIN_MODE=local) and 'frontend' (context ./frontend, port 3000:3000, env NEXT_PUBLIC_API_BASE_URL=http://backend:8000).
+DO NOT touch application code in backend/ or frontend/.
+Print only commit hash and a 3-line summary.</pre>
+</div>
+
+<div class="bug-card low">
+  <div class="bug-header">
+    <span class="bug-title">B-008: OpenPhish cache snapshot is empty upon initial database seed</span>
+    <div>
+      <span class="badge badge-low">LOW</span>
+      <span class="badge" style="background:#e0f2fe; color:#0369a1; border:1px solid #7dd3fc;">Codex (Backend)</span>
+    </div>
+  </div>
+  <p><strong>Evidence:</strong> <code>SELECT json_array_length(entries) FROM feed_snapshots</code> returns 0.</p>
+  <p><strong>Root Cause:</strong> <code>scripts/seed.py</code> creates table row without offline fixture URL hashes.</p>
+  <p><strong>Expected:</strong> Seed initial offline malicious URL hashes so matches work without live web feed.</p>
+  <pre>REPO CONTEXT: origin https://github.com/himeshghosh98-maker/THREAT, folder wt-backend, branch backend-dev, edits in backend/ only. Run git pull and git merge main. Commit message: "fix B-008: seed offline openphish sample entries". Push to backend-dev.
+BUG: seed.py leaves OpenPhish snapshot entries empty, requiring internet access for feed matches.
+IN backend/scripts/seed.py: populate feed_snapshots with sample known malicious URL hashes (including test lookup fixtures).
+DO NOT modify threat intel analyzer logic in app/analyzers/intel.py.
+REGRESSION TEST: Verify test suite passes with pytest.
+Print only commit hash and a 3-line summary.</pre>
+</div>
+
+<h2>6. Parallel Fix Plan</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Round</th>
+      <th>Codex (wt-backend / backend-dev)</th>
+      <th>Antigravity (wt-frontend / frontend-dev)</th>
+      <th>Freebuff (kernal-v2 / main)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Round 1</strong></td>
+      <td>
+        <strong>B-001</strong> (stale contract fallback)<br>
+        <strong>B-003</strong> (DNS AAAA NXDOMAIN catch)
+      </td>
+      <td>
+        <strong>B-004</strong> (dynamic onchain network copy)<br>
+        <strong>B-005</strong> (remove fake chips)
+      </td>
+      <td>
+        <strong>B-006</strong> (complete root README)
+      </td>
+    </tr>
+    <tr>
+      <td><strong>Round 2</strong></td>
+      <td>
+        <strong>B-002</strong> (adjust risk score threshold)<br>
+        <strong>B-008</strong> (seed offline OpenPhish entries)
+      </td>
+      <td>
+        <em>Idle / Verification</em>
+      </td>
+      <td>
+        <strong>B-007</strong> (implement docker-compose.yml)
+      </td>
+    </tr>
+    <tr>
+      <td><strong>Round 3</strong></td>
+      <td colspan="3" style="text-align: center; font-weight: bold; background-color: #f8fafc;">
+        Main Integrator: Merge backend-dev & frontend-dev into main &amp; run full regression test suite
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>7. Not-Bugs & Demo Risk Disclosures</h2>
+<ul>
+  <li><strong>Unconfigured API Keys:</strong> Missing Google Safe Browsing and LLM provider keys trigger deterministic offline fallbacks. This is an intended architecture feature, not a bug.</li>
+  <li><strong>Rate Limiting (10 req/min):</strong> Bursts exceeding 10 scans receive HTTP 429 <code>rate_limited</code>. Presenters must space live scan demonstrations by ~6 seconds.</li>
+  <li><strong>Hardhat Node Reset:</strong> Restarting the local node clears chain state. Always execute <code>start_local_chain.ps1</code> before launching uvicorn.</li>
+</ul>
+
+</body>
+</html>
