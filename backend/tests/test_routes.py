@@ -57,14 +57,14 @@ def test_scan_publish_verify(client, route, body, expected):
         assert report.ai_explanation.summary == "No significant indicators found in the available checks."
     path = f"{API}/reports/{report.id}"
     assert validated(client.get(path), ScanReport) == report
-    before = validated(client.get(path + "/verify"), VerifyResult)
-    assert not before.match and before.onchain_hash is None and before.history == []
+    before = client.get(path + "/verify")
+    assert before.status_code == 409 and before.json()["error"]["code"] == "not_published"
     published = validated(client.post(path + "/publish"), ScanReport)
-    assert published.onchain.status == "published" and published.onchain.network == "local-stub"
+    assert published.onchain.status == "published" and published.onchain.network == "local"
     assert validated(client.post(path + "/publish"), ScanReport) == published
     assert validated(client.get(path), ScanReport) == published
     after = validated(client.get(path + "/verify"), VerifyResult)
-    assert after.match and after.recomputed_hash == before.recomputed_hash == published.onchain.report_hash
+    assert after.match and after.recomputed_hash == published.onchain.report_hash
     assert len(after.history) == 1
 
 

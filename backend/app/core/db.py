@@ -32,6 +32,6 @@ def insert_report(db: Session, report: ScanReport):
 
 def read_report(row: ReportRow) -> ScanReport:
     report = ScanReport.model_validate(row.report)
-    if row.receipt:
+    if row.receipt and row.receipt["onchain"]["network"] != "local-stub":
         report.onchain = Onchain.model_validate(row.receipt["onchain"])
     return report

@@ -130,7 +130,9 @@ def test_bare_obfuscated_url_is_distinct_from_email(client):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("name", ["anthropic", "openai", "gemini"])
-async def test_official_sdk_structured_requests(name, network):
+async def test_official_sdk_structured_requests(name, network, monkeypatch):
+    if name == "gemini":
+        monkeypatch.setattr("google.genai._api_client.has_aiohttp", False)
     from app.ai.explain import Narrative
     from app.core.config import Settings
 

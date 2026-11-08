@@ -9,6 +9,7 @@ from app.analyzers.intel import NO_MATCH
 from app.analyzers.tls import DISCLAIMER
 from app.core.config import Settings
 from app.core.db import insert_report, open_database
+from app.web3.registry import ChainUnavailable, publish
 from app.models.orm import ReportRow
 from app.models.schemas import IntelMatch, MessageInput, Redirect, ScanReport, SecurityHeader, TLS, UrlInput
 
@@ -65,10 +66,17 @@ def seed(db: Session):
 
 
 def main():
-    engine = open_database(Settings().database_url)
+    settings = Settings()
+    engine = open_database(settings.database_url)
     try:
         with Session(engine) as db:
             seed(db)
+            if settings.chain_mode == "local":
+                row = db.get(ReportRow, str(uuid5(NAMESPACE_URL, "threat-intel:seed:0")))
+                try:
+                    publish(db, row, settings)
+                except ChainUnavailable:
+                    pass
     finally:
         engine.dispose()
 

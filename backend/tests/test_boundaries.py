@@ -24,8 +24,8 @@ def test_tampered_record(client):
         insert_report(db, report)
         db.commit()
         row = db.get(ReportRow, str(report.id))
-        publish(db, row)
-        row.report = dict(row.report, limitations=["Changed after publication."])
+        publish(db, row, client.app.state.settings)
+        row.report = dict(row.report, domain="changed.example")
         db.commit()
-        result = verify(row)
+        result = verify(row, client.app.state.settings)
         assert not result.match and result.recomputed_hash != result.onchain_hash

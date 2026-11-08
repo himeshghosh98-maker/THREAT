@@ -1,13 +1,13 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.core.db import get_db, read_report
+from app.core.db import get_db
 from app.models.orm import ReportRow
 from app.models.schemas import Classification, ReportList, ScanReport, VerifyResult
-from app.web3.registry import publish, verify
+from app.web3.registry import current_report, publish, verify
 
 router = APIRouter()
 
@@ -20,26 +20,26 @@ def get_row(id: UUID, db: Session = Depends(get_db)) -> ReportRow:
 
 
 @router.get("/reports")
-def list_reports(risk: Classification | None = None, limit: int = Query(50, ge=0),
+def list_reports(request: Request, risk: Classification | None = None, limit: int = Query(50, ge=0),
                  offset: int = Query(0, ge=0), db: Session = Depends(get_db)) -> ReportList:
     query = select(ReportRow)
     if risk is not None:
         query = query.where(ReportRow.classification == risk)
     total = db.scalar(select(func.count()).select_from(query.subquery()))
     rows = db.scalars(query.order_by(ReportRow.created_at.desc(), ReportRow.id).offset(offset).limit(limit))
-    return ReportList(items=[read_report(row) for row in rows], total=total)
+    return ReportList(items=[current_report(row, request.app.state.settings) for row in rows], total=total)
 
 
 @router.get("/reports/{id}")
-def get_report(row: ReportRow = Depends(get_row)) -> ScanReport:
-    return read_report(row)
+def get_report(request: Request, row: ReportRow = Depends(get_row)) -> ScanReport:
+    return current_report(row, request.app.state.settings)
 
 
 @router.post("/reports/{id}/publish")
-def publish_report(row: ReportRow = Depends(get_row), db: Session = Depends(get_db)) -> ScanReport:
-    return publish(db, row)
+def publish_report(request: Request, row: ReportRow = Depends(get_row), db: Session = Depends(get_db)) -> ScanReport:
+    return publish(db, row, request.app.state.settings)
 
 
 @router.get("/reports/{id}/verify")
-def verify_report(row: ReportRow = Depends(get_row)) -> VerifyResult:
-    return verify(row)
+def verify_report(request: Request, row: ReportRow = Depends(get_row)) -> VerifyResult:
+    return verify(row, request.app.state.settings)

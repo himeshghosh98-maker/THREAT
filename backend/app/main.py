@@ -10,6 +10,7 @@ from starlette.exceptions import HTTPException
 from app.api import routes_health, routes_intel, routes_reports, routes_scan
 from app.core.config import Settings
 from app.core.db import open_database
+from app.web3.registry import ChainUnavailable, NotPublished
 from app.models.schemas import ErrorDetail, ErrorResponse
 
 
@@ -25,7 +26,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def lifespan(app):
         # Uvicorn access logs include query strings on both successful and failed requests.
         logging.getLogger("uvicorn.access").disabled = True
-        for name in ("httpx", "httpcore", "slowapi", "anthropic", "openai", "google_genai"):
+        for name in ("httpx", "httpcore", "slowapi", "anthropic", "openai", "google_genai", "web3", "urllib3"):
             logging.getLogger(name).setLevel(logging.ERROR)
         app.state.engine = open_database(settings.database_url)
         try:
@@ -44,6 +45,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @app.exception_handler(RequestValidationError)
     async def invalid_request(request, exc):
         return error(422, "validation_error", "Invalid request parameters or body.")
+
+    @app.exception_handler(ChainUnavailable)
+    async def chain_unavailable(request, exc):
+        return error(503, "chain_unavailable", "The configured registry could not complete the chain request.")
+
+    @app.exception_handler(NotPublished)
+    async def not_published(request, exc):
+        return error(409, "not_published", "This report has not been published to the registry.")
 
     @app.exception_handler(HTTPException)
     async def http_error(request, exc):

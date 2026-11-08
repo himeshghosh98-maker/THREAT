@@ -1,0 +1,3 @@
+deployments/*
+!deployments/localhost.json
+!deployments/sepolia.json

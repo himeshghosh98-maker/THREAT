@@ -8,7 +8,7 @@ from scripts.seed import seed
 
 
 @pytest.fixture
-def client(tmp_path):
+def client(tmp_path, mock_registry):
     settings = Settings(database_url=f"sqlite:///{tmp_path}/db.sqlite",
                         cors_origins="http://localhost:3000, https://ui.example", google_safe_browsing_key="test-only",
                         llm_provider="anthropic", anthropic_api_key=None, openai_api_key=None, gemini_api_key=None)
@@ -109,3 +109,31 @@ def tls_transport(monkeypatch, certificate):
     async def handshake(address, port, host, verify):
         return [certificate(host)]
     monkeypatch.setattr(tls, "handshake", handshake)
+
+@pytest.fixture
+def mock_registry(monkeypatch):
+    from datetime import UTC, datetime
+    from app.web3 import registry
+    from app.models.schemas import History, Onchain
+
+    ledger = {}
+
+    class MockRegistry:
+        def __init__(self, settings, address=None):
+            self.address = address or "0x" + "ab" * 20
+
+        def submit(self, digest, category):
+            id = len(ledger)
+            tx = "0x" + f"{id + 1:064x}"
+            ledger[id] = {"digest": digest, "status": "published", "category": category,
+                          "history": [History(status="published", tx_hash=tx, timestamp=datetime.now(UTC))]}
+            state = Onchain(status="published", report_hash=digest, tx_hash=tx, chain_report_id=id,
+                            network="local", contract_address=self.address)
+            return {"onchain": state.model_dump(mode="json"), "block": id + 1}
+
+        def inspect(self, receipt, history):
+            entry = ledger[receipt["onchain"]["chain_report_id"]]
+            return entry["digest"], entry["status"], entry["history"] if history else []
+
+    monkeypatch.setattr(registry, "Registry", MockRegistry)
+    return ledger

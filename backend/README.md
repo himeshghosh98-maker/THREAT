@@ -42,4 +42,6 @@ URL and message scans compute risk before requesting a structured explanation. E
 
 The seed command generates seven offline fixtures. Two share a synthetic redirect for the correlations view.
 
-Publish stores a simulated receipt on the local database. Verify recomputes the report hash and compares it with that receipt. Before publication it returns match=false, a null onchain_hash and an empty history. The local-stub network and zero contract address identify simulated results. Publication and verification stay local.
+## Web3 registry
+
+Publish submits the canonical report digest and risk classification to the deployed Solidity registry. Verify reads the current digest and event history from that deployment. With CHAIN_MODE=local (default), use a Hardhat node on port 8545. For Sepolia, configure SEPOLIA_RPC_URL and DEPLOYER_PRIVATE_KEY with a throwaway wallet funded by a Sepolia faucet. CONTRACT_ADDRESS overrides the network deployment manifest. See [local and Sepolia setup](scripts/dev_chain.md).

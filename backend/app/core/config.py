@@ -7,6 +7,10 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
+    chain_mode: Literal["local", "sepolia"] = "local"
+    contract_address: str | None = None
+    deployer_private_key: SecretStr | None = None
+    sepolia_rpc_url: SecretStr | None = None
     llm_provider: Literal["anthropic", "openai", "gemini"] = "anthropic"
     anthropic_model: str = "claude-haiku-5-5"
     openai_model: str = "gpt-4.1-mini"
@@ -28,7 +32,8 @@ class Settings(BaseSettings):
 
     @property
     def sensitive_values(self):
-        return (self.anthropic_api_key, self.openai_api_key, self.gemini_api_key, self.google_safe_browsing_key)
+        return (self.anthropic_api_key, self.openai_api_key, self.gemini_api_key, self.google_safe_browsing_key,
+                self.deployer_private_key, self.sepolia_rpc_url)
 
     @property
     def origins(self) -> list[str]:
