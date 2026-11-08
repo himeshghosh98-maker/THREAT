@@ -143,11 +143,13 @@ def inspect(host, certs, trusted):
     return report, indicators
 
 
-async def analyze(url, resolution=None):
+async def analyze(url, resolution=None, observations=None):
     if url.scheme != "https":
         return None, [evidence("tls-http", "tls", "Unencrypted HTTP input", "medium",
                                "The submitted URL does not use HTTPS.", "URL scheme")]
     certs, trusted = await peer_chain(url, resolution)
+    if observations is not None:
+        observations.add(("cert_fingerprint", certs[0].fingerprint(hashes.SHA256()).hex()))
     return inspect(url.host.strip("[]").rstrip("."), certs, trusted)
 
 

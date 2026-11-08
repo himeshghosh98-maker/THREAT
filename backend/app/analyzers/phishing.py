@@ -1,5 +1,6 @@
 import asyncio
 import json
+from hashlib import sha256
 import re
 import unicodedata
 from datetime import UTC, datetime
@@ -91,7 +92,7 @@ def inspect_url(url: HttpUrl) -> list[Indicator]:
     return items
 
 
-async def domain_age(host: str) -> list[Indicator]:
+async def domain_age(host: str, observations=None) -> list[Indicator]:
     domain = extract(host).top_domain_under_public_suffix
     if not domain:
         raise ValueError("No registrable domain")
@@ -101,6 +102,13 @@ async def domain_age(host: str) -> list[Indicator]:
     record = json.loads(result.body)
     if record.get("ldhName", "").lower().rstrip(".") != domain:
         raise ValueError("RDAP domain mismatch")
+    if observations is not None:
+        for entity in record.get("entities", []):
+            if "registrar" in entity.get("roles", []):
+                for identifier in entity.get("publicIds", []):
+                    number = str(identifier.get("identifier", ""))
+                    if identifier.get("type") == "IANA Registrar ID" and number.isascii() and number.isdigit():
+                        observations.add(("registrar", "sha256:" + sha256(("iana:" + number).encode()).hexdigest()))
     dates = [datetime.fromisoformat(event["eventDate"]) for event in record["events"]
              if event.get("eventAction") == "registration"]
     days = (datetime.now(UTC) - min(dates)).days

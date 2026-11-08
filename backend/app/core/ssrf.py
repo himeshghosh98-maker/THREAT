@@ -91,7 +91,7 @@ class FetchResult:
     headers: httpx.Headers | None = None
 
 
-async def safe_fetch(url, max_redirects=5, timeout=8, max_bytes=1_000_000, *, resolution=None, json_body=None, api_key=None) -> FetchResult:
+async def safe_fetch(url, max_redirects=5, timeout=8, max_bytes=1_000_000, *, resolution=None, json_body=None, api_key=None, observations=None) -> FetchResult:
     current = validate_url(url)
     if json_body is not None or api_key is not None:
         if str(current) != "https://safebrowsing.googleapis.com/v4/threatMatches:find":
@@ -117,6 +117,8 @@ async def safe_fetch(url, max_redirects=5, timeout=8, max_bytes=1_000_000, *, re
                     async with client.stream("POST" if json_body is not None else "GET", pinned, headers=headers,
                                              json=json_body, follow_redirects=False,
                                              extensions={"sni_hostname": host}) as response:
+                        if observations is not None:
+                            observations.add(("ip", str(address)))
                         chain.append(Redirect(url=display_url(current), status=response.status_code,
                                               domain=host))
                         if response.has_redirect_location:

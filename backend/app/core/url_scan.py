@@ -4,22 +4,23 @@ from uuid import uuid4
 
 from app.analyzers import headers, intel, phishing, redirects, tls
 from app.core import ssrf
+from app.core.correlation import redirect_targets
 from app.core.defang import display_url
 from app.core.risk import score_risk
 from app.models.schemas import Onchain, ScanReport
 
 
-async def analyze_url(url, engine, settings) -> ScanReport:
+async def analyze_url(url, engine, settings, observations=None) -> ScanReport:
     host = url.host.strip("[]").rstrip(".")
     resolution = asyncio.create_task(ssrf.safe_resolve(host))
-    page = asyncio.create_task(ssrf.safe_fetch(url, resolution=resolution))
+    page = asyncio.create_task(ssrf.safe_fetch(url, resolution=resolution, observations=observations))
     sources = [intel.OpenPhish(engine), intel.GoogleSafeBrowsing(settings.google_safe_browsing_key)]
     checks = {
         "URL structure": asyncio.to_thread(phishing.inspect_url, url),
         "DNS": phishing.dns_indicators(host),
-        "RDAP": phishing.domain_age(host),
+        "RDAP": phishing.domain_age(host, observations),
         "HTTP redirects": redirects.analyze(url, page),
-        "TLS": tls.analyze(url, resolution),
+        "TLS": tls.analyze(url, resolution, observations),
         "Security headers": headers.analyze(page),
     }
     if url.scheme == "https":
@@ -61,6 +62,10 @@ async def analyze_url(url, engine, settings) -> ScanReport:
         else:
             items.extend(outcome)
         completed.append(name)
+    if observations is not None:
+        observations.update(redirect_targets(chain))
+        if resolution.done() and not resolution.cancelled() and resolution.exception() is None:
+            observations.update(("ip", str(ip)) for ip in resolution.result())
     if certificate:
         if ct is not None:
             certificate.ct_records_count, certificate.ct_notes = ct

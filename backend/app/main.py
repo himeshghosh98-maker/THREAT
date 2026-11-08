@@ -9,6 +9,7 @@ from starlette.exceptions import HTTPException
 
 from app.api import routes_health, routes_intel, routes_reports, routes_scan
 from app.core.config import Settings
+from app.core.http import HttpBoundary, configure_logging
 from app.core.db import open_database
 from app.web3.registry import ChainUnavailable, NotPublished
 from app.models.schemas import ErrorDetail, ErrorResponse
@@ -26,6 +27,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def lifespan(app):
         # Uvicorn access logs include query strings on both successful and failed requests.
         logging.getLogger("uvicorn.access").disabled = True
+        configure_logging()
         for name in ("httpx", "httpcore", "slowapi", "anthropic", "openai", "google_genai", "web3", "urllib3"):
             logging.getLogger(name).setLevel(logging.ERROR)
         app.state.engine = open_database(settings.database_url)
@@ -39,6 +41,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.limiter = routes_scan.limiter
     app.add_middleware(CORSMiddleware, allow_origins=settings.origins,
                        allow_methods=["GET", "POST"], allow_headers=["Content-Type"])
+    app.add_middleware(HttpBoundary)
     for router in (routes_health.router, routes_scan.router, routes_reports.router, routes_intel.router):
         app.include_router(router, prefix="/api/v1")
 

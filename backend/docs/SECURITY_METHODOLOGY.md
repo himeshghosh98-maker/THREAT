@@ -1,0 +1,29 @@
+# Security methodology
+
+## Requests and outbound connections
+
+The HTTP boundary counts bytes before parsing a request, including bodies delivered in chunks. It rejects bodies above 65,536 bytes. SlowAPI applies independent ten-per-minute quotas to each POST endpoint for each client IP. These counters are process-local. The request log emits JSON containing only the event name, HTTP method, status and elapsed milliseconds. Uvicorn access logging is disabled. Responses set browser content, framing, referrer, cache and permissions policies; HTTPS responses also set HSTS.
+
+Scan targets must use HTTP or HTTPS on ports 80, 443, 8080 or 8443. The fetcher rejects credentials in the authority and resolves DNS before connecting. Non-public, metadata, loopback, link-local, private, reserved and disallowed IPv6 transition addresses are rejected. A mixed public/private answer fails validation. The connection uses a validated numeric address with the original Host and TLS server name. Every redirect triggers a new validation. The fetch budget is five redirects, eight seconds and one million bytes of response text. Attachments and non-text response bodies are skipped. JavaScript is never executed.
+
+TLS inspection uses the pinned address and platform trust store. If validation fails it can retry that address solely to inspect the peer certificate. Header findings describe the observed final response. Certificate transparency can be unavailable or incomplete. The local CA list contains synthetic training entries; it does not establish an incident affecting a real issuer. A URL scan cannot diagnose how a CA generated its private keys.
+
+## Evidence and decisions
+
+Rules check brand resemblance, confusable characters, URL structure, registration age, DNS, redirects, TLS, response headers and message tactics. Severity weights are 2, 8, 20, 35 and 55 from informational through critical. Low-severity header findings contribute 2 each. Scores are capped at 100. Two high or critical indicators and a score of at least 70 produce high risk. Other positive evidence produces suspicious. With no indicators, missing checks produce inconclusive. Low risk requires completed coverage with no indicators. Confidence is the completed fraction of attempted checks.
+
+OpenPhish Community Feed entries are cached for six hours as URL and host hashes. An exact URL match or an authoritative Google Safe Browsing v4 hit can confirm maliciousness. A host-only match cannot identify the specific path. Missing keys, stale feeds that cannot refresh and failed lookups reduce coverage. Google Lookup, when configured, receives the submitted URL without its fragment.
+
+Message rules extract links, contact identifiers and social-engineering cues. Up to five distinct links use the URL pipeline. Text pressure alone raises suspicion. An authoritative match on a linked URL is required to confirm a message. Child evidence is recorded with the parent.
+
+## Model boundary and data minimisation
+
+Risk is computed before the optional model call. Evidence and masked message text are escaped, bounded by delimiters and treated as data. Model instructions forbid inventing evidence, assigning a verdict or obeying instructions from those blocks. Pydantic validation, indicator references, output checks, a 15-second attempt timeout and one retry guard the explanation path. Failure produces the deterministic template. These controls reduce prompt-injection exposure; generated prose still requires judgment.
+
+Reports retain defanged origins, an at-most-80-character redacted message preview and selected evidence. Extracted emails and phones are normalized and stored as salted SHA-256 digests in reports and the indicator index. The installation salt is generated once and stored in its database. These identifiers allow equality matching and are pseudonymous; an attacker with the database can guess low-entropy phone numbers. A shared registrar, CDN, certificate or redirect destination does not establish common malicious ownership.
+
+Only a Keccak report digest and an allowed risk category are supplied as submission arguments. The chain also records the submitting address, timestamps, status and revision events. Raw URLs, domains, contact details, free-text evidence and model prose are never submitted. Verification establishes integrity and event history for the selected projection of the report.
+
+## Limits of detection
+
+There is no browser execution, user interaction, authenticated crawling or exploit testing. One response can miss content shown to another browser, location or user. Shared infrastructure, short DNS lifetimes, header omissions and ordinary payment language can trigger false positives. Feeds and brand lists have coverage gaps. The example cases are too small to measure accuracy. The API has no user authentication; local setup binds to loopback.

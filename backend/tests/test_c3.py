@@ -43,8 +43,8 @@ def test_injection_and_urgency(client):
 def test_link_verdict_and_extraction(client):
     report = scan(client, "Contact help[at]example[.]org or +91 98765 43210. Open hxxps://listed[.]example/login")
     analysis = report.message_analysis
-    assert analysis.extracted_emails == ["help@example.org"]
-    assert analysis.extracted_phones == ["+91 98765 43210"]
+    assert len(analysis.extracted_emails) == 1 and analysis.extracted_emails[0].startswith("sha256:")
+    assert len(analysis.extracted_phones) == 1 and analysis.extracted_phones[0].startswith("sha256:")
     assert analysis.extracted_urls == ["hxxps://listed[.]example"]
     assert report.risk.classification == "confirmed_malicious"
     assert report.threat_intel[0].matched and "login" not in report.input_display
@@ -124,7 +124,7 @@ def test_url_explanation_uses_evidence(client, monkeypatch):
 def test_bare_obfuscated_url_is_distinct_from_email(client):
     report = scan(client, "Write to contact@example.org or visit listed[.]example/login.")
     assert report.message_analysis.extracted_urls == ["hxxps://listed[.]example"]
-    assert report.message_analysis.extracted_emails == ["contact@example.org"]
+    assert len(report.message_analysis.extracted_emails) == 1 and report.message_analysis.extracted_emails[0].startswith("sha256:")
     assert report.risk.classification == "confirmed_malicious"
 
 

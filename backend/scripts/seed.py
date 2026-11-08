@@ -1,4 +1,5 @@
 from datetime import timedelta
+from hashlib import sha256
 from uuid import NAMESPACE_URL, uuid5
 
 from sqlalchemy.orm import Session
@@ -7,6 +8,7 @@ from app.api.routes_scan import build_report
 from app.ai.explain import explain
 from app.analyzers.intel import NO_MATCH
 from app.analyzers.tls import DISCLAIMER
+from app.core.correlation import index_values
 from app.core.config import Settings
 from app.core.db import insert_report, open_database
 from app.web3.registry import ChainUnavailable, publish
@@ -41,8 +43,13 @@ def seed(db: Session):
     ]
     for index, sample in enumerate(samples):
         fixture_id = uuid5(NAMESPACE_URL, f"threat-intel:seed:{index}")
+        observations = set()
+        if index < 2:
+            observations = {("redirect_target", "review.example"),
+                            ("cert_fingerprint", sha256(b"C5 synthetic training certificate").hexdigest())}
         row = db.get(ReportRow, str(fixture_id))
         if row:
+            index_values(db, fixture_id, observations)
             if row.receipt:
                 continue
             report = ScanReport.model_validate(row.report)
@@ -61,7 +68,7 @@ def seed(db: Session):
         if index < 2:
             report.redirect_chain = [Redirect(url="hxxps://review[.]example", status=302, domain="review.example")]
             report.limitations.append("The redirect is synthetic fixture data.")
-        insert_report(db, report)
+        insert_report(db, report, observations)
     db.commit()
 
 

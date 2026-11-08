@@ -1,0 +1,24 @@
+services:
+  api:
+    build: .
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      LOCAL_RPC_URL: ${LOCAL_RPC_URL:-http://hardhat:8545}
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - reports:/srv/backend/artifacts
+      - deployments:/srv/backend/contracts/deployments
+  hardhat:
+    profiles: ["chain"]
+    build: ./contracts
+    ports:
+      - "127.0.0.1:8545:8545"
+    volumes:
+      - deployments:/chain/deployments
+
+volumes:
+  reports:
+  deployments:
