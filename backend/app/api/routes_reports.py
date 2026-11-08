@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.core.http import limiter
 from app.core.db import get_db
 from app.models.orm import ReportRow
 from app.models.schemas import Classification, ReportList, ScanReport, VerifyResult
@@ -36,8 +37,9 @@ def get_report(request: Request, row: ReportRow = Depends(get_row)) -> ScanRepor
 
 
 @router.post("/reports/{id}/publish")
-def publish_report(request: Request, row: ReportRow = Depends(get_row), db: Session = Depends(get_db)) -> ScanReport:
-    return publish(db, row, request.app.state.settings)
+@limiter.limit("10/minute")
+def publish_report(request: Request, id: UUID, db: Session = Depends(get_db)) -> ScanReport:
+    return publish(db, get_row(id, db), request.app.state.settings)
 
 
 @router.get("/reports/{id}/verify")

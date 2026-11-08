@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     chain_mode: Literal["local", "sepolia"] = "local"
+    local_rpc_url: str = "http://127.0.0.1:8545"
     contract_address: str | None = None
     deployer_private_key: SecretStr | None = None
     sepolia_rpc_url: SecretStr | None = None

@@ -1,7 +1,7 @@
 [
   {
     "label": "KYC SMS",
-    "message": "SBI KYC update required immediately or your account will be blocked. Verify at hxxps://sbi-secure-login[.]xyz/kyc.",
+    "message": "SBI KYC update required immediately or your account will be blocked. Verify at hxxps://sbi-secure-login[.]invalid/kyc.",
     "indicator": "kyc-request"
   },
   {

@@ -1,0 +1,37 @@
+[
+  {
+    "label": "Lookalike over HTTP",
+    "url": "http://paypa1.invalid",
+    "suspicious": true
+  },
+  {
+    "label": "Punycode lookalike",
+    "url": "https://xn--pple-43d.invalid",
+    "suspicious": true
+  },
+  {
+    "label": "KYC link with redirect parameter",
+    "url": "https://sbi-secure-login.invalid/check?url=https://review.invalid",
+    "suspicious": true
+  },
+  {
+    "label": "GitHub",
+    "url": "https://github.com",
+    "suspicious": false
+  },
+  {
+    "label": "Google",
+    "url": "https://www.google.com",
+    "suspicious": false
+  },
+  {
+    "label": "Bank of America",
+    "url": "https://www.bankofamerica.com",
+    "suspicious": false
+  },
+  {
+    "label": "MIT",
+    "url": "https://www.mit.edu",
+    "suspicious": false
+  }
+]

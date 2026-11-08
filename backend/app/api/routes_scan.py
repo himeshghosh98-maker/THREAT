@@ -3,8 +3,6 @@ from datetime import UTC, datetime
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from slowapi import Limiter
-from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
 
 from app.ai.explain import explain, explain_report
@@ -14,12 +12,12 @@ from app.analyzers.phishing import inspect_url
 from app.core.db import get_db, insert_report
 from app.core.defang import display_url
 from app.core.risk import assess, score_risk
+from app.core.http import limiter
 from app.core.ssrf import BlockedTarget, validate_url
 from app.core.url_scan import analyze_url
 from app.models.schemas import MessageInput, Onchain, ScanReport, UrlInput
 
 router = APIRouter()
-limiter = Limiter(key_func=get_remote_address)
 
 
 def build_report(payload: UrlInput | MessageInput, keys=()) -> ScanReport:
@@ -48,8 +46,8 @@ def build_report(payload: UrlInput | MessageInput, keys=()) -> ScanReport:
                                       chain_report_id=None, network=None, contract_address=None))
 
 
-def save_scan(db: Session, report: ScanReport) -> ScanReport:
-    insert_report(db, report)
+def save_scan(db: Session, report: ScanReport, observations) -> ScanReport:
+    insert_report(db, report, observations)
     db.commit()
     return report
 
@@ -61,9 +59,10 @@ async def scan_url(request: Request, payload: UrlInput, db: Session = Depends(ge
         url = validate_url(payload.url)
     except BlockedTarget:
         raise HTTPException(422, "A public HTTP(S) URL on an allowed port is required.") from None
-    report = await analyze_url(url, request.app.state.engine, request.app.state.settings)
+    observations = set()
+    report = await analyze_url(url, request.app.state.engine, request.app.state.settings, observations)
     report.ai_explanation = await explain_report(report, request.app.state.settings)
-    return save_scan(db, report)
+    return save_scan(db, report, observations)
 
 
 @router.post("/scan/message")
@@ -73,10 +72,11 @@ async def scan_message(request: Request, payload: MessageInput, db: Session = De
     report = build_report(payload, settings.sensitive_values)
     report.limitations = ["Message analysis uses local language signals. Claimed identities are unverified.",
                           "Only the first five distinct links are scanned; the report displays their defanged origins."]
+    observations = set()
     urls = extract_links(payload.message)
 
     async def inspect(link):
-        return await analyze_url(validate_url(link), request.app.state.engine, settings)
+        return await analyze_url(validate_url(link), request.app.state.engine, settings, observations)
 
     results = await asyncio.gather(*(inspect(link) for link in urls[:5]), return_exceptions=True)
     completed = list(report.risk.checks_completed)
@@ -98,4 +98,4 @@ async def scan_message(request: Request, payload: MessageInput, db: Session = De
                              authoritative_hit=any(link.risk.classification == "confirmed_malicious" for link in linked))
     report.ai_explanation = await explain_report(report, settings, message=payload.message, links=linked)
     report.message_analysis.explanation = report.ai_explanation.summary
-    return save_scan(db, report)
+    return save_scan(db, report, observations)

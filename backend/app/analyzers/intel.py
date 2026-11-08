@@ -1,11 +1,9 @@
-from collections import defaultdict
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from hashlib import sha256
 import json
 from abc import ABC, abstractmethod
 from typing import Literal
-from uuid import UUID
 
 from pydantic import HttpUrl
 from sqlalchemy.dialects.postgresql import insert as postgres_insert
@@ -14,7 +12,7 @@ from sqlalchemy.orm import Session
 
 from app.core import ssrf
 from app.models.orm import FeedSnapshot
-from app.models.schemas import Cluster, Correlations, IntelMatch, ScanReport
+from app.models.schemas import IntelMatch
 
 NO_MATCH = "No match found in this source. This does not indicate the site is safe."
 OPENPHISH = "OpenPhish"
@@ -117,15 +115,3 @@ class GoogleSafeBrowsing(ThreatIntelSource):
                 m.get("threat", {}).get("url") == target for m in body["matches"]):
             raise ValueError("Unexpected lookup response")
         return SourceResult(self.name, True, "Submitted URL matched a Google threat list.", "ok", True)
-
-
-def correlations(reports: list[ScanReport]) -> Correlations:
-    groups: dict[str, set[UUID]] = defaultdict(set)
-    for report in reports:
-        for hop in report.redirect_chain:
-            groups[hop.url].add(report.id)
-    return Correlations(clusters=[
-        Cluster(id=f"redirect-{min(ids)}", shared_indicator=target, indicator_type="redirect_target",
-                report_ids=sorted(ids), summary="Reports share a redirect target.")
-        for target, ids in sorted(groups.items()) if len(ids) > 1
-    ])

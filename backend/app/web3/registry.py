@@ -36,7 +36,7 @@ class Registry:
         abi = manifest.get("abi") or json.loads((DEPLOYMENTS / "localhost.json").read_text())["abi"]
         self.address = Web3.to_checksum_address(address or settings.contract_address or manifest["address"])
         self.start = manifest.get("blockNumber", 0) if self.address == manifest.get("address") else 0
-        endpoint = "http://127.0.0.1:8545" if local else settings.sepolia_rpc_url.get_secret_value()
+        endpoint = settings.local_rpc_url if local else settings.sepolia_rpc_url.get_secret_value()
         self.w3 = Web3(Web3.HTTPProvider(endpoint, request_kwargs={"timeout": 8}))
         if self.w3.eth.chain_id != expected or not self.w3.eth.get_code(self.address):
             raise ChainUnavailable()

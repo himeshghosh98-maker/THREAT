@@ -32,9 +32,11 @@ def test_list_and_correlations(client):
         assert page.total == (4 if risk == "suspicious" else 3)
         assert len(page.items) == 1
         assert page.items[0].risk.classification == risk
-    cluster, = validated(client.get(API + "/intel/correlations"), Correlations).clusters
-    assert len(cluster.report_ids) == 2
-    assert set(cluster.report_ids) <= {r.id for r in listing.items}
+    clusters = validated(client.get(API + "/intel/correlations"), Correlations).clusters
+    assert {c.indicator_type for c in clusters} == {"redirect_target", "cert_fingerprint"}
+    for cluster in clusters:
+        assert len(cluster.report_ids) == 2
+        assert set(cluster.report_ids) <= {r.id for r in listing.items}
 
 
 @pytest.mark.parametrize(("route", "body", "expected"), [
