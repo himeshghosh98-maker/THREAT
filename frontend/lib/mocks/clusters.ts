@@ -23,3 +23,5 @@ export const MOCK_CLUSTERS: Cluster[] = [
     summary: "Centralized credential harvester and redirect nexus used across both SMS phishing lures and IDN homograph domain vectors."
   }
 ];
+
+export const MOCK_CLUSTERS_EMPTY: Cluster[] = [];

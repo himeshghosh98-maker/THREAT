@@ -268,38 +268,53 @@ export async function publishReport(id: string): Promise<ScanReport> {
 export async function verifyReport(id: string): Promise<VerifyResult> {
   if (USE_MOCKS) {
     await new Promise((r) => setTimeout(r, 400));
+
+    if (id === "mock-503-chain-unavailable" || id.includes("503") || id.includes("chain_unavailable")) {
+      throw new ApiClientError("chain_unavailable", "Blockchain service unavailable; report saved locally", 503);
+    }
+    if (id === "mock-404-not-found" || id.includes("404")) {
+      throw new ApiClientError("not_found", `Report with id '${id}' not found`, 404);
+    }
+    if (id === "mock-409-not-published" || id.includes("409")) {
+      throw new ApiClientError("not_published", "This report has not been published to the blockchain yet.", 409);
+    }
+
     if (id === MOCK_VERIFY_MATCH_TRUE.report_id) {
       return MOCK_VERIFY_MATCH_TRUE;
     }
     if (id === MOCK_VERIFY_MATCH_FALSE.report_id) {
       return MOCK_VERIFY_MATCH_FALSE;
     }
+
     // Check if report exists and has onchain data
     const found = mockReportsStore.find((r) => r.id === id);
-    if (found?.onchain.status === "published" && found.onchain.report_hash) {
-      return {
-        report_id: id,
-        match: true,
-        recomputed_hash: found.onchain.report_hash,
-        onchain_hash: found.onchain.report_hash,
-        status: "validated",
-        network: found.onchain.network || "Arbitrum Sepolia",
-        contract_address: found.onchain.contract_address || "0x3B62e6D109fD5c697204689E41Eb75945C992c6C",
-        history: [
-          {
-            status: "published",
-            tx_hash: found.onchain.tx_hash || "0x9ab718e47265911470e4e6c3be31e3d23190204d6e9177b8b4566d8e2049a463",
-            timestamp: new Date().toISOString()
-          }
-        ],
-        note: "The blockchain proves integrity and history of a report, not the truth of its contents."
-      };
+    if (found) {
+      if (found.onchain.status === "not_published") {
+        throw new ApiClientError("not_published", "This report has not been published to the blockchain yet.", 409);
+      }
+      if (found.onchain.report_hash) {
+        return {
+          report_id: id,
+          match: true,
+          recomputed_hash: found.onchain.report_hash,
+          onchain_hash: found.onchain.report_hash,
+          status: found.onchain.status === "disputed" ? "disputed" : "validated",
+          network: found.onchain.network || "Arbitrum Sepolia",
+          contract_address: found.onchain.contract_address || "0x3B62e6D109fD5c697204689E41Eb75945C992c6C",
+          history: [
+            {
+              status: "published",
+              tx_hash: found.onchain.tx_hash || "0x9ab718e47265911470e4e6c3be31e3d23190204d6e9177b8b4566d8e2049a463",
+              timestamp: new Date().toISOString()
+            }
+          ],
+          note: "The blockchain proves integrity and history of a report, not the truth of its contents."
+        };
+      }
     }
-    // Return match false result for unverified or tampered reports
-    return {
-      ...MOCK_VERIFY_MATCH_FALSE,
-      report_id: id
-    };
+
+    // If ID is not in mock store and not matched
+    throw new ApiClientError("not_found", `Report with id '${id}' not found`, 404);
   }
 
   const res = await fetch(`${API_BASE_URL}/api/v1/reports/${encodeURIComponent(id)}/verify`);
