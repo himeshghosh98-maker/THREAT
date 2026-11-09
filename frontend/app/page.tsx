@@ -31,10 +31,12 @@ import {
   Sparkles,
   ChevronRight,
   Plus,
-  Camera
+  Camera,
+  QrCode
 } from "lucide-react";
 import Link from "next/link";
 import { ScreenshotScanner } from "@/components/ScreenshotScanner";
+import { QrScanner } from "@/components/QrScanner";
 
 const URL_MAX_LENGTH = 2048;
 const MESSAGE_MAX_LENGTH = 5000;
@@ -64,7 +66,7 @@ function ScanPageContent() {
   const queryParam = searchParams.get("q") || "";
   const queryClient = useQueryClient();
 
-  const [activeTab, setActiveTab] = React.useState<"url" | "message" | "screenshot">("url");
+  const [activeTab, setActiveTab] = React.useState<"url" | "message" | "screenshot" | "qr">("url");
   const [urlInput, setUrlInput] = React.useState(queryParam);
   const [messageInput, setMessageInput] = React.useState("");
   const [urlValidationError, setUrlValidationError] = React.useState<string | null>(null);
@@ -215,7 +217,7 @@ function ScanPageContent() {
   };
 
   // Example chips presets
-  const handleSelectExample = (type: "typosquat" | "benign" | "sms" | "screenshot") => {
+  const handleSelectExample = (type: "typosquat" | "benign" | "sms" | "screenshot" | "qr") => {
     setApiError(null);
     setUrlValidationError(null);
     setMessageValidationError(null);
@@ -233,6 +235,8 @@ function ScanPageContent() {
       );
     } else if (type === "screenshot") {
       setActiveTab("screenshot");
+    } else if (type === "qr") {
+      setActiveTab("qr");
     }
   };
 
@@ -625,6 +629,23 @@ function ScanPageContent() {
                 <Camera className="w-3.5 h-3.5" />
                 <span>Screenshot</span>
               </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab("qr");
+                  setUrlValidationError(null);
+                  setMessageValidationError(null);
+                }}
+                disabled={isScanning}
+                className={`flex items-center gap-2 px-5 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                  activeTab === "qr"
+                    ? "bg-white text-[#4F6BFF] shadow-[0_4px_12px_rgba(79,107,255,0.15)]"
+                    : "text-[#526085] hover:text-[#0F1E4A]"
+                }`}
+              >
+                <QrCode className="w-3.5 h-3.5" />
+                <span>QR Code</span>
+              </button>
             </div>
 
             <div className="flex items-center gap-2">
@@ -754,6 +775,15 @@ function ScanPageContent() {
                 </p>
               )}
             </form>
+          ) : activeTab === "qr" ? (
+            <QrScanner
+              onAnalyzeUrl={(url) => {
+                startProgressAnimation();
+                urlMutation.mutate(url);
+              }}
+              isScanning={isScanning}
+              isActive={activeTab === "qr"}
+            />
           ) : (
             <ScreenshotScanner
               onAnalyzeUrl={(url) => {
@@ -821,6 +851,16 @@ function ScanPageContent() {
               <Camera className="w-3.5 h-3.5 text-[#5BC8FF] shrink-0" />
               <span>KYC Expiry Notice</span>
               <span className="text-[#5BC8FF] font-sans font-medium text-[11px]">(Screenshot)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSelectExample("qr")}
+              disabled={isScanning}
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/80 hover:bg-white text-[#526085] hover:text-[#0F1E4A] transition-all font-mono text-xs border border-white/90 shadow-xs hover:shadow-sm cursor-pointer"
+            >
+              <QrCode className="w-3.5 h-3.5 text-[#4F6BFF] shrink-0" />
+              <span>PayPal Phish QR</span>
+              <span className="text-[#4F6BFF] font-sans font-medium text-[11px]">(QR Code)</span>
             </button>
           </div>
 
