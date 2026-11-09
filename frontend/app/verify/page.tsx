@@ -137,7 +137,7 @@ function VerifyContent() {
           Verify Scan Authenticity On-Chain
         </h1>
         <p className="text-xs text-on-surface-variant leading-relaxed">
-          Cryptographically recompute the SHA-256 state tree of any report and compare against immutable smart contract records.
+          Cryptographically recompute the Keccak-256 hash of any report and compare against the on-chain registry.
         </p>
       </div>
 
@@ -171,7 +171,8 @@ function VerifyContent() {
           </form>
 
           {/* Quick presets for testing */}
-          <div className="flex flex-wrap items-center gap-2 text-xs pt-1">
+          {process.env.NEXT_PUBLIC_DEV_TOOLS === "true" && (
+            <div className="flex flex-wrap items-center gap-2 text-xs pt-1">
             <span className="text-[11px] font-mono text-on-surface-variant uppercase tracking-wider">
               Test Presets:
             </span>
@@ -183,7 +184,7 @@ function VerifyContent() {
               }}
               className="text-[11px] font-mono px-2.5 py-0.5 rounded bg-surface-container hover:bg-surface-container-high text-emerald-400 border border-emerald-500/30 transition-colors"
             >
-              Match Verified (Sepolia)
+              Match Verified
             </button>
             <button
               type="button"
@@ -216,6 +217,7 @@ function VerifyContent() {
               Chain Offline (503)
             </button>
           </div>
+          )}
         </CardContent>
       </Card>
 
@@ -399,7 +401,7 @@ function VerifyContent() {
                 <div className="p-3.5 rounded-xl bg-surface-container border border-surface-container-high space-y-2">
                   <div className="flex items-center justify-between text-xs font-mono">
                     <span className="text-primary font-bold uppercase tracking-wider text-[11px]">
-                      Recomputed SHA-256 Digest
+                      Recomputed Keccak-256 Digest
                     </span>
                     <button
                       type="button"
@@ -529,7 +531,7 @@ function VerifyContent() {
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1 text-[11px] text-secondary hover:underline"
-                          title="View on Sepolia Etherscan"
+                          title="View transaction in explorer"
                         >
                           <span>Explorer</span>
                           <ExternalLink className="w-3 h-3" />

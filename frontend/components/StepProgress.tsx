@@ -54,54 +54,54 @@ export function StepProgress({
       className="w-full pt-4 pb-2"
     >
       {/* Status announcement line */}
-      <div className="flex items-center justify-between text-xs text-on-surface-variant mb-2.5">
+      <div className="flex items-center justify-between text-xs text-[#526085] mb-2.5">
         <span className="flex items-center gap-1.5 font-medium">
           {isCompleted ? (
-            <span className="text-primary flex items-center gap-1 font-semibold">
-              <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
+            <span className="text-[#10B981] flex items-center gap-1 font-semibold">
+              <CheckCircle2 className="w-3.5 h-3.5 text-[#10B981]" />
               Analysis complete — redirecting to report...
             </span>
           ) : isError ? (
-            <span className="text-error flex items-center gap-1 font-semibold">
-              <AlertCircle className="w-3.5 h-3.5 text-error" />
+            <span className="text-[#EF4444] flex items-center gap-1 font-semibold">
+              <AlertCircle className="w-3.5 h-3.5 text-[#EF4444]" />
               Pipeline interrupted
             </span>
           ) : (
-            <span className="text-primary flex items-center gap-1.5">
-              <Loader2 className="w-3.5 h-3.5 text-primary animate-spin" />
+            <span className="text-[#4F6BFF] flex items-center gap-1.5 font-semibold">
+              <Loader2 className="w-3.5 h-3.5 text-[#4F6BFF] animate-spin" />
               Stage {Math.min(currentStageIndex + 1, activeSteps.length)} of {activeSteps.length}:{" "}
-              <strong className="text-on-surface font-semibold">{currentStageName}</strong>
+              <strong className="text-[#0B1B6B] font-bold">{currentStageName}</strong>
             </span>
           )}
         </span>
-        <span className="font-mono text-[11px] text-on-surface-variant">
+        <span className="font-mono text-[11px] text-[#7C8CFF] font-bold">
           {isCompleted ? activeSteps.length : currentStageIndex + 1} / {activeSteps.length}
         </span>
       </div>
 
-      {/* 5-Step Strip from Stitch Design */}
+      {/* 5-Step Strip with glowing pill indicators */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 sm:gap-3 items-center">
         {activeSteps.map((step, idx) => {
           const isDone = step.status === "completed";
           const isRunning = step.status === "running";
           const isFailed = step.status === "failed";
 
-          let dotClass = "bg-surface-variant";
-          let textClass = "text-on-surface-variant";
-          let barClass = "bg-surface-container-high";
+          let dotClass = "bg-[#D4E0F7]";
+          let textClass = "text-[#526085]";
+          let barClass = "bg-[#E4ECFD]";
 
           if (isDone) {
-            dotClass = "bg-primary";
-            textClass = "text-primary font-semibold";
-            barClass = "bg-primary";
+            dotClass = "bg-[#4F6BFF]";
+            textClass = "text-[#4F6BFF] font-semibold";
+            barClass = "bg-gradient-to-r from-[#4F6BFF] to-[#7C8CFF]";
           } else if (isRunning) {
-            dotClass = "bg-primary ring-4 ring-primary/20 animate-pulse";
-            textClass = "text-primary font-semibold";
-            barClass = "bg-primary-container";
+            dotClass = "bg-[#4F6BFF] ring-4 ring-[#4F6BFF]/25 animate-pulse";
+            textClass = "text-[#4F6BFF] font-bold";
+            barClass = "bg-[#7C8CFF]/50 animate-pulse";
           } else if (isFailed) {
-            dotClass = "bg-error";
-            textClass = "text-error font-semibold";
-            barClass = "bg-error-container";
+            dotClass = "bg-[#EF4444]";
+            textClass = "text-[#EF4444] font-semibold";
+            barClass = "bg-[#FEE2E2]";
           }
 
           return (
@@ -114,7 +114,7 @@ export function StepProgress({
                   {idx + 1}. {step.name}
                 </span>
               </div>
-              <div className={`h-1 w-full rounded-full transition-all duration-300 ${barClass}`} />
+              <div className={`h-1.5 w-full rounded-full transition-all duration-300 ${barClass}`} />
             </div>
           );
         })}

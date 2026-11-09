@@ -138,7 +138,7 @@ export function ReportHeader({
         {/* Defanged input_display in monospace plain text (strictly non-clickable) */}
         <div className="space-y-1">
           <div className="text-[11px] font-mono text-on-surface-variant/80 uppercase tracking-wider flex items-center justify-between">
-            <span>Defanged Target (Safe Plain Text):</span>
+            <span>Defanged Target (Plain Text):</span>
             <span className="text-[10px] text-primary/80 lowercase">non-clickable plain text</span>
           </div>
           <div className="p-3 rounded-lg bg-surface-container-lowest border border-surface-container-high font-mono text-xs sm:text-sm text-primary break-all select-all leading-relaxed shadow-inner">

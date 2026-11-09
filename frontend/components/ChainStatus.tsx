@@ -76,7 +76,7 @@ export function ChainStatus({
 
           <div className="flex flex-wrap items-center justify-between text-xs text-zinc-400 pt-1">
             <div className="flex items-center gap-3">
-              <span>Network: <strong className="text-zinc-200">{onchain.network || "Arbitrum Sepolia"}</strong></span>
+              <span>Network: <strong className="text-zinc-200">{onchain.network || "Not published"}</strong></span>
               {onchain.chain_report_id !== null && (
                 <span>ID: <strong className="text-zinc-200">#{onchain.chain_report_id}</strong></span>
               )}

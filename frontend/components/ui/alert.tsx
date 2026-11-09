@@ -3,19 +3,19 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const alertVariants = cva(
-  "relative w-full rounded-lg border px-4 py-3 text-sm [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-foreground [&>svg~*]:pl-7",
+  "relative w-full rounded-2xl border px-4 py-3.5 text-sm backdrop-blur-md transition-all [&>svg+div]:translate-y-[-2px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-current [&>svg~*]:pl-7",
   {
     variants: {
       variant: {
-        default: "bg-zinc-900 border-zinc-800 text-zinc-100",
+        default: "bg-white/80 border-[#E8EFFE] text-[#0F1E4A] shadow-sm",
         destructive:
-          "border-red-800/50 bg-red-950/30 text-red-300 [&>svg]:text-red-400",
+          "border-rose-200 bg-rose-50/90 text-rose-900 [&>svg]:text-rose-600 shadow-sm",
         warning:
-          "border-amber-800/50 bg-amber-950/30 text-amber-300 [&>svg]:text-amber-400",
+          "border-amber-200 bg-amber-50/90 text-amber-900 [&>svg]:text-amber-600 shadow-sm",
         success:
-          "border-emerald-800/50 bg-emerald-950/30 text-emerald-300 [&>svg]:text-emerald-400",
+          "border-emerald-200 bg-emerald-50/90 text-emerald-900 [&>svg]:text-emerald-600 shadow-sm",
         info:
-          "border-cyan-800/50 bg-cyan-950/30 text-cyan-300 [&>svg]:text-cyan-400"
+          "border-blue-200 bg-blue-50/90 text-[#0F1E4A] [&>svg]:text-[#4F6BFF] shadow-sm"
       },
     },
     defaultVariants: {
@@ -43,7 +43,7 @@ const AlertTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <h5
     ref={ref}
-    className={cn("mb-1 font-semibold leading-none tracking-tight text-zinc-100", className)}
+    className={cn("mb-1 font-semibold leading-none tracking-tight text-[#0F1E4A]", className)}
     {...props}
   />
 ));
@@ -55,7 +55,7 @@ const AlertDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("text-sm text-zinc-300 [&_p]:leading-relaxed", className)}
+    className={cn("text-xs text-[#526085] leading-relaxed [&_p]:leading-relaxed", className)}
     {...props}
   />
 ));

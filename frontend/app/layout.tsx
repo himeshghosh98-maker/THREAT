@@ -29,9 +29,15 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`dark h-full ${inter.variable} ${jetbrainsMono.variable}`}
+      className={`h-full ${inter.variable} ${jetbrainsMono.variable}`}
     >
-      <body className="min-h-full bg-surface text-on-surface font-sans antialiased selection:bg-primary-container selection:text-on-primary-container">
+      <body className="min-h-full font-sans antialiased text-[#526085] bg-gradient-to-b from-[#FFFFFF] to-[#F5F8FF] selection:bg-[#4F6BFF]/20 selection:text-[#4F6BFF]">
+        {/* Animated ambient drifting wave shapes in the background */}
+        <div className="bg-drift-container" aria-hidden="true">
+          <div className="blob-1" />
+          <div className="blob-2" />
+          <div className="blob-3" />
+        </div>
         <Providers>
           <AppShell>{children}</AppShell>
         </Providers>

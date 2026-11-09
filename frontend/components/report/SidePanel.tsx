@@ -4,7 +4,6 @@ import * as React from "react";
 import { ScanReport } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   FileText,
   Copy,
@@ -37,9 +36,6 @@ export function SidePanel({ report, onCopyText }: SidePanelProps) {
             <span className="flex items-center gap-1.5">
               <FileText className="w-3.5 h-3.5 text-primary" /> Case Metadata
             </span>
-            <Badge variant="outline" className="text-[10px] font-mono border-outline-variant/40">
-              SOC Tier-1
-            </Badge>
           </CardTitle>
         </CardHeader>
 
@@ -127,7 +123,7 @@ export function SidePanel({ report, onCopyText }: SidePanelProps) {
             <div className="space-y-1 pt-1 border-t border-surface-container-high/40">
               <div className="flex items-center justify-between text-on-surface-variant font-mono text-[11px]">
                 <span className="flex items-center gap-1">
-                  <Hash className="w-3 h-3 text-primary" /> SHA-256 Digest:
+                  <Hash className="w-3 h-3 text-primary" /> Keccak-256 Digest:
                 </span>
                 <button
                   type="button"

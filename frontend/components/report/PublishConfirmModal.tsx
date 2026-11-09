@@ -64,7 +64,7 @@ export function PublishConfirmModal({
               Publish Case to Blockchain
             </h3>
             <p className="text-xs text-on-surface-variant font-mono">
-              Network: Arbitrum Sepolia Testnet
+              Network: On-chain Registry
             </p>
           </div>
         </div>
@@ -76,7 +76,7 @@ export function PublishConfirmModal({
               <Lock className="w-3.5 h-3.5" /> What Will Be Recorded On-Chain:
             </div>
             <p className="text-on-surface">
-              Only the <strong>SHA-256 cryptographic digest (hash)</strong> of this assessment is recorded on the smart contract to create an immutable tamper-evident proof of discovery.
+              Only the <strong>Keccak-256 cryptographic digest (hash)</strong> of this assessment is recorded on the smart contract to create an immutable tamper-evident proof of discovery.
             </p>
           </div>
 
