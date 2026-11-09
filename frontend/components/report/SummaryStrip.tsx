@@ -209,7 +209,7 @@ export function SummaryStrip({ report }: SummaryStripProps) {
                 <div className="flex items-center justify-between font-mono">
                   <span>Network:</span>
                   <span className="text-on-surface font-semibold">
-                    {report.onchain.network || "Arbitrum Sepolia"}
+                    {report.onchain.network || "Not published"}
                   </span>
                 </div>
                 {report.onchain.chain_report_id !== null ? (
@@ -229,7 +229,7 @@ export function SummaryStrip({ report }: SummaryStripProps) {
 
             <div className="pt-2 border-t border-surface-container-high/60 flex items-center justify-between text-[11px] font-mono text-on-surface-variant">
               <span>Ledger:</span>
-              <span className="text-on-surface">Arbitrum Rollup</span>
+              <span className="text-on-surface">On-chain registry</span>
             </div>
           </CardContent>
         </Card>

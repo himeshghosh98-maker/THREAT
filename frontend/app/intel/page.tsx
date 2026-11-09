@@ -46,31 +46,31 @@ function getIndicatorTypeBadge(type: ClusterIndicatorType) {
   switch (type) {
     case "ip":
       return (
-        <Badge className="bg-red-950/80 text-red-300 border-red-800 font-mono text-[10px] uppercase gap-1">
+        <Badge className="bg-rose-50 text-rose-700 border-rose-200 font-mono text-[10px] uppercase gap-1">
           <Server className="w-3 h-3" /> Shared IP
         </Badge>
       );
     case "redirect_target":
       return (
-        <Badge className="bg-amber-950/80 text-amber-300 border-amber-800 font-mono text-[10px] uppercase gap-1">
+        <Badge className="bg-amber-50 text-amber-800 border-amber-200 font-mono text-[10px] uppercase gap-1">
           <Globe className="w-3 h-3" /> Redirect Target
         </Badge>
       );
     case "cert_fingerprint":
       return (
-        <Badge className="bg-cyan-950/80 text-cyan-300 border-cyan-800 font-mono text-[10px] uppercase gap-1">
+        <Badge className="bg-[#F0F4FF] text-[#4F6BFF] border-blue-200 font-mono text-[10px] uppercase gap-1">
           <ShieldAlert className="w-3 h-3" /> Cert Fingerprint
         </Badge>
       );
     case "phone":
       return (
-        <Badge className="bg-purple-950/80 text-purple-300 border-purple-800 font-mono text-[10px] uppercase gap-1">
+        <Badge className="bg-purple-50 text-purple-700 border-purple-200 font-mono text-[10px] uppercase gap-1">
           <Hash className="w-3 h-3" /> Shared Phone
         </Badge>
       );
     case "email":
       return (
-        <Badge className="bg-blue-950/80 text-blue-300 border-blue-800 font-mono text-[10px] uppercase gap-1">
+        <Badge className="bg-blue-50 text-blue-700 border-blue-200 font-mono text-[10px] uppercase gap-1">
           <Hash className="w-3 h-3" /> Shared Email
         </Badge>
       );
@@ -303,7 +303,7 @@ export default function ThreatIntelPage() {
             </h1>
           </div>
           <p className="text-xs text-on-surface-variant max-w-3xl leading-relaxed">
-            Multi-target correlation nexus identifying shared bulletproof IPs, redirect funnels, and SSL infrastructure linking disparate phishing attacks and smishing campaigns.
+            Multi-target correlation nexus identifying shared infrastructure, redirect funnels, and SSL infrastructure linking disparate phishing attacks and smishing campaigns.
           </p>
         </div>
 
@@ -360,10 +360,10 @@ export default function ThreatIntelPage() {
                 )}
               </div>
               <p className="text-[11px] text-on-surface-variant">
-                Heuristic & intel confirmed
+                Suspicious or higher
               </p>
             </div>
-            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-red-950/40 text-red-400 border border-red-500/30 shrink-0">
+            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-rose-50 text-rose-600 border border-rose-200 shrink-0">
               <ShieldAlert className="w-5 h-5" />
             </div>
           </CardContent>
@@ -384,10 +384,10 @@ export default function ThreatIntelPage() {
                 )}
               </div>
               <p className="text-[11px] text-on-surface-variant">
-                Arbitrum Sepolia anchored
+                Published on-chain
               </p>
             </div>
-            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-emerald-950/40 text-emerald-400 border border-emerald-500/30 shrink-0">
+            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200 shrink-0">
               <Link2 className="w-5 h-5" />
             </div>
           </CardContent>
@@ -656,7 +656,7 @@ export default function ThreatIntelPage() {
                   Classification
                 </TableHead>
                 <TableHead className="text-xs font-mono uppercase text-on-surface-variant">
-                  Defanged Scanned Target (Safe Plain Text)
+                  Defanged Scanned Target (Plain Text)
                 </TableHead>
                 <TableHead className="w-[120px] text-xs font-mono uppercase text-on-surface-variant">
                   Input Type

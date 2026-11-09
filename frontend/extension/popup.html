@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TrustPulse</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header class="header">
+    <div class="brand">
+      <img src="icons/icon-48.png" alt="TrustPulse Icon" class="brand-icon">
+      <span class="brand-name">TrustPulse</span>
+    </div>
+    <button id="open-options-btn" class="icon-button" title="Settings" aria-label="Settings">⚙️</button>
+  </header>
+
+  <main class="main-content">
+    <section class="section page-section">
+      <div class="section-label">CURRENT PAGE</div>
+      <div id="current-url" class="defanged-text">Detecting active page...</div>
+      <button id="check-page-btn" class="primary-button" disabled>Check this page</button>
+    </section>
+
+    <div id="status-container" class="status-box hidden"></div>
+
+    <section id="result-card" class="result-card hidden">
+      <div class="result-header">
+        <div class="risk-badge-wrap">
+          <span id="risk-badge" class="risk-badge"></span>
+        </div>
+        <div class="risk-meta">
+          <div id="risk-score" class="risk-score"></div>
+          <div id="evidence-coverage" class="evidence-coverage"></div>
+        </div>
+      </div>
+
+      <div id="indicators-container" class="indicators-list"></div>
+
+      <div id="checks-failed-note" class="checks-failed-note hidden"></div>
+
+      <div id="low-risk-note" class="low-risk-note hidden"></div>
+
+      <p class="disclaimer">Results are based on available checks and are not a guarantee of safety.</p>
+
+      <button id="view-report-btn" class="secondary-button hidden">View full report</button>
+    </section>
+
+    <section class="section history-section">
+      <div class="section-label">RECENT CHECKS</div>
+      <div id="history-container" class="history-list"></div>
+    </section>
+  </main>
+
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -21,32 +21,32 @@ export function getRiskDetails(classification: RiskClassification) {
     case "low_risk":
       return {
         label: "Low Risk",
-        badgeClasses: "bg-emerald-950/40 text-emerald-400 border-emerald-500/40",
-        textClass: "text-emerald-400",
+        badgeClasses: "bg-emerald-50 text-emerald-700 border-emerald-200/80 shadow-[0_2px_8px_rgba(16,185,129,0.12)]",
+        textClass: "text-emerald-700",
         icon: CheckCircle2,
         description: "No significant indicators found in the available checks."
       };
     case "suspicious":
       return {
         label: "Suspicious",
-        badgeClasses: "bg-amber-950/40 text-amber-400 border-amber-500/40",
-        textClass: "text-amber-400",
+        badgeClasses: "bg-amber-50 text-amber-800 border-amber-200/80 shadow-[0_2px_8px_rgba(245,158,11,0.12)]",
+        textClass: "text-amber-800",
         icon: AlertTriangle,
         description: "Potential security anomalies detected."
       };
     case "high_risk":
       return {
         label: "High Risk",
-        badgeClasses: "bg-red-950/40 text-red-400 border-red-500/50",
-        textClass: "text-red-400",
+        badgeClasses: "bg-rose-50 text-rose-700 border-rose-200/80 shadow-[0_2px_8px_rgba(239,68,68,0.14)]",
+        textClass: "text-rose-700",
         icon: AlertOctagon,
         description: "Multiple severe indicators of malicious intent."
       };
     case "confirmed_malicious":
       return {
         label: "Confirmed Malicious",
-        badgeClasses: "bg-[#93000a]/40 text-[#ffb4ab] border-[#93000a] shadow-[0_0_12px_rgba(185,28,28,0.25)]",
-        textClass: "text-[#ffb4ab]",
+        badgeClasses: "bg-red-100 text-red-800 border-red-300 shadow-[0_2px_10px_rgba(220,38,38,0.22)] font-bold",
+        textClass: "text-red-800",
         icon: ShieldAlert,
         description: "Confirmed malicious campaign or credential-stealing payload."
       };
@@ -54,8 +54,8 @@ export function getRiskDetails(classification: RiskClassification) {
     default:
       return {
         label: "Inconclusive",
-        badgeClasses: "bg-surface-container text-on-surface-variant border-surface-container-high",
-        textClass: "text-on-surface-variant",
+        badgeClasses: "bg-[#F0F4FF] text-[#526085] border-[#D4E0F7] shadow-sm",
+        textClass: "text-[#526085]",
         icon: HelpCircle,
         description: "Unable to complete checks to reach a decisive verdict."
       };
@@ -74,7 +74,7 @@ export function RiskBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-semibold uppercase tracking-wider border shadow-sm",
+        "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider border transition-all",
         meta.badgeClasses,
         className
       )}
@@ -82,7 +82,7 @@ export function RiskBadge({
       {showIcon && <Icon className="w-3.5 h-3.5 shrink-0" />}
       <span>{meta.label}</span>
       {score !== undefined && (
-        <span className="opacity-80 font-mono text-[10px]">({score})</span>
+        <span className="opacity-80 font-mono text-[11px] font-bold">({score})</span>
       )}
     </span>
   );

@@ -121,7 +121,7 @@ export function MessageTab({ analysis }: MessageTabProps) {
           {/* Extracted Artifacts: URLs, Emails, Phone Numbers (Plain text, never clickable) */}
           <div className="space-y-3 pt-2 border-t border-surface-container-high/60">
             <span className="text-xs font-mono text-on-surface-variant uppercase tracking-wider font-semibold">
-              Extracted Communication Artifacts (Safe Defanged Plain Text):
+              Extracted Communication Artifacts (Defanged Plain Text):
             </span>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">

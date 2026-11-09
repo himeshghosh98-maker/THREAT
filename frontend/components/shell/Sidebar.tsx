@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { health } from "@/lib/api";
 import {
   Radar,
   FileText,
@@ -28,6 +29,39 @@ export function Sidebar({
   onMobileClose,
 }: SidebarProps) {
   const pathname = usePathname();
+  const [engineStatus, setEngineStatus] = React.useState<"checking" | "online" | "offline">("checking");
+  const [latencyMs, setLatencyMs] = React.useState<number | null>(null);
+
+  React.useEffect(() => {
+    let mounted = true;
+    async function checkHealth() {
+      const t0 = performance.now();
+      try {
+        const res = await health();
+        const t1 = performance.now();
+        if (mounted) {
+          if (res && res.status === "ok") {
+            setEngineStatus("online");
+            setLatencyMs(Math.round(t1 - t0));
+          } else {
+            setEngineStatus("offline");
+            setLatencyMs(null);
+          }
+        }
+      } catch {
+        if (mounted) {
+          setEngineStatus("offline");
+          setLatencyMs(null);
+        }
+      }
+    }
+    checkHealth();
+    const interval = setInterval(checkHealth, 30000);
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, []);
 
   const navItems = [
     { name: "Scan", href: "/", icon: Radar },
@@ -136,18 +170,20 @@ export function Sidebar({
         <div className="p-3 rounded-lg bg-surface-container border border-surface-container-high/50 text-xs">
           <div className="flex items-center justify-between mb-1.5">
             <div className="flex items-center gap-1.5 text-on-surface-variant">
-              <Wifi className="w-3.5 h-3.5 text-primary" />
+              <Wifi className={`w-3.5 h-3.5 ${engineStatus === "online" ? "text-emerald-500" : engineStatus === "offline" ? "text-rose-500" : "text-amber-500"}`} />
               {!isCollapsed && (
-                <span className="font-mono text-[11px]">Engine Active</span>
+                <span className="font-mono text-[11px]">
+                  {engineStatus === "online" ? "Engine Online" : engineStatus === "offline" ? "Engine Offline" : "Checking..."}
+                </span>
               )}
             </div>
-            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+            <span className={`w-2 h-2 rounded-full ${engineStatus === "online" ? "bg-emerald-500 animate-pulse" : engineStatus === "offline" ? "bg-rose-500" : "bg-amber-500"}`} />
           </div>
 
           {!isCollapsed && (
             <div className="flex items-center justify-between pt-1">
               <div className="text-[11px] font-mono text-on-surface-variant">
-                <span>Latency 18ms</span>
+                <span>{latencyMs !== null ? `${latencyMs}ms` : engineStatus === "online" ? "Online" : engineStatus === "offline" ? "Offline" : "Checking"}</span>
               </div>
               <button
                 type="button"

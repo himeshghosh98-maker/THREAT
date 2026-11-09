@@ -220,11 +220,10 @@ export function OnchainTab({
                   </button>
                 </div>
                 <div className="text-on-surface font-bold font-mono text-sm select-all">
-                  {truncateHash(onchain.contract_address || "0x3B62e6D109fD5c697204689E41Eb75945C992c6C")}
+                  {onchain.contract_address ? truncateHash(onchain.contract_address) : "Not published"}
                 </div>
                 <div className="text-[10px] text-on-surface-variant flex items-center justify-between">
-                  <span>Network: {onchain.network || "Arbitrum Sepolia"}</span>
-                  <span className="opacity-70">Block 7192401</span>
+                  <span>Network: {onchain.network || "Not published"}</span>
                 </div>
               </div>
 
@@ -241,18 +240,17 @@ export function OnchainTab({
                   </button>
                 </div>
                 <div className="text-secondary font-bold font-mono text-sm select-all">
-                  {truncateHash(onchain.tx_hash || "0x9ab718e47265911470e4e6c3be31e3d23190204d6e9177b8b4566d8e2049a463")}
+                  {onchain.tx_hash ? truncateHash(onchain.tx_hash) : "Not published"}
                 </div>
                 <div className="text-[10px] text-on-surface-variant flex items-center justify-between">
-                  <span>Record ID: #{onchain.chain_report_id || "1042"}</span>
-                  <span className="opacity-70">Timestamp: Confirmed</span>
+                  <span>Record ID: #{onchain.chain_report_id ?? "N/A"}</span>
                 </div>
               </div>
 
               {/* Report Digest */}
               <div className="p-3.5 rounded-xl bg-surface-container border border-surface-container-high space-y-1.5 md:col-span-2">
                 <div className="flex items-center justify-between text-on-surface-variant text-[11px]">
-                  <span>Cryptographic Report Digest (Keccak-256 / SHA-256):</span>
+                  <span>Cryptographic Report Digest (Keccak-256):</span>
                   <button
                     type="button"
                     onClick={() =>
@@ -289,7 +287,7 @@ export function OnchainTab({
                 </h4>
               </div>
               <p className="text-xs text-on-surface-variant leading-relaxed">
-                Publishing writes an immutable SHA-256 fingerprint of this scan to Arbitrum Sepolia. Anyone with the original report can verify it was not modified or backdated.
+                Publishing writes an immutable Keccak-256 fingerprint of this scan to the on-chain registry. Anyone with the original report can verify it was not modified or backdated.
               </p>
               <p className="text-[11px] text-primary/80 font-mono">
                 Privacy Guaranteed: Raw URLs, messages, and PII are never sent or written to the blockchain.
