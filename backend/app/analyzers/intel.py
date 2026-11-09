@@ -2,6 +2,8 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from hashlib import sha256
 import json
+import re
+from urllib.parse import urlsplit, urlunsplit
 from abc import ABC, abstractmethod
 from typing import Literal
 
@@ -10,6 +12,7 @@ from sqlalchemy.dialects.postgresql import insert as postgres_insert
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.orm import Session
 
+from app.analyzers.phishing import shared_platform
 from app.core import ssrf
 from app.models.orm import FeedSnapshot
 from app.models.schemas import IntelMatch
@@ -50,6 +53,18 @@ def digest(value):
     return sha256(value.encode()).hexdigest()
 
 
+def url_digest(url):
+    # Pydantic canonicalizes scheme, IDNA host and default ports. Decode only
+    # RFC 3986 unreserved bytes; encoded separators and query order are significant.
+    def escape(match):
+        char = chr(int(match[1], 16))
+        return char if re.fullmatch(r"[A-Za-z0-9._~-]", char) else match[0].upper()
+    parts = urlsplit(str(url))
+    path = re.sub(r"%([0-9a-fA-F]{2})", escape, parts.path).rstrip("/") or "/"
+    query = re.sub(r"%([0-9a-fA-F]{2})", escape, parts.query)
+    return digest(urlunsplit((parts.scheme, parts.netloc, path, query, "")))
+
+
 class OpenPhish(ThreatIntelSource):
     name = OPENPHISH
 
@@ -71,12 +86,12 @@ class OpenPhish(ThreatIntelSource):
         now = datetime.now(UTC)
         with Session(self.engine) as db:
             row = db.get(FeedSnapshot, self.name)
-            if row and not force and now - row.refreshed_at.replace(tzinfo=UTC) < timedelta(hours=6):
+            if row and not force and row.entries.get("version") == 2 and now - row.refreshed_at.replace(tzinfo=UTC) < timedelta(hours=6):
                 return row.entries
         return self.store(await self.download_urls(), now)
 
     def store(self, feed, now):
-        entries = {"urls": sorted({digest(str(url).partition("#")[0]) for url in feed}),
+        entries = {"version": 2, "urls": sorted({url_digest(url) for url in feed}),
                    "hosts": sorted({digest(url.host.strip("[]").lower().rstrip(".")) for url in feed})}
         insert = sqlite_insert if self.engine.dialect.name == "sqlite" else postgres_insert
         stmt = insert(FeedSnapshot).values(source=self.name, refreshed_at=now, entries=entries)
@@ -87,11 +102,37 @@ class OpenPhish(ThreatIntelSource):
 
     async def _lookup(self, url, domain):
         entries = await self.snapshot()
-        if digest(str(url).partition("#")[0]) in entries["urls"]:
+        if url_digest(url) in entries["urls"]:
             return SourceResult(self.name, True, "Exact URL listed in the phishing feed.", "ok", True)
-        if digest(domain) in entries["hosts"]:
+        if not shared_platform(domain) and digest(domain) in entries["hosts"]:
             return SourceResult(self.name, True, "Hostname listed for another URL. This path is unverified.", "ok")
         return SourceResult(self.name, False, NO_MATCH, "ok")
+
+
+class PhishingDatabase(OpenPhish):
+    """Bounded prefix of the publisher's active URL list. No claim about the rest."""
+    name = "Phishing.Database"
+    endpoint = "https://raw.githubusercontent.com/Phishing-Database/Phishing.Database/master/phishing-links-ACTIVE.txt"
+    window = 131072
+
+    @classmethod
+    async def download_urls(cls):
+        result = await ssrf.safe_fetch(cls.endpoint, max_redirects=0, byte_range=cls.window, max_bytes=cls.window)
+        if result.failed or not result.chain or result.headers is None:
+            raise ssrf.FetchFailure("Active list unavailable")
+        body = result.body
+        if result.chain[-1].status == 206:
+            match = re.fullmatch(r"bytes 0-(\d+)/(\d+)", result.headers.get("content-range", ""))
+            if not match or int(match[1]) + 1 != len(body):
+                raise ssrf.FetchFailure("Invalid feed range")
+            if len(body) < int(match[2]):
+                body = body.rpartition(b"\n")[0]
+        elif result.chain[-1].status != 200:
+            raise ssrf.FetchFailure("Active list unavailable")
+        urls = [HttpUrl(line) for line in body.decode().splitlines() if line and not line.startswith(("#", "ftp://"))]
+        if not urls:
+            raise ssrf.FetchFailure("Empty active list")
+        return urls
 
 
 class GoogleSafeBrowsing(ThreatIntelSource):

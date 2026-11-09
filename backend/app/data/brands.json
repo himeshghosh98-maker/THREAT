@@ -1,186 +1,719 @@
 {
-  "google": [
-    "google.com",
-    "google.co.in"
-  ],
-  "paypal": [
-    "paypal.com"
-  ],
-  "microsoft": [
-    "microsoft.com",
-    "microsoftonline.com"
-  ],
-  "apple": [
-    "apple.com"
-  ],
-  "amazon": [
-    "amazon.com",
-    "amazon.in",
-    "amazon.co.uk"
-  ],
-  "facebook": [
-    "facebook.com",
-    "fb.com"
-  ],
-  "instagram": [
-    "instagram.com"
-  ],
-  "whatsapp": [
-    "whatsapp.com"
-  ],
-  "netflix": [
-    "netflix.com"
-  ],
-  "github": [
-    "github.com"
-  ],
-  "gitlab": [
-    "gitlab.com"
-  ],
-  "linkedin": [
-    "linkedin.com"
-  ],
-  "yahoo": [
-    "yahoo.com"
-  ],
-  "outlook": [
-    "outlook.com",
-    "live.com"
-  ],
-  "adobe": [
-    "adobe.com"
-  ],
-  "dropbox": [
-    "dropbox.com"
-  ],
-  "salesforce": [
-    "salesforce.com"
-  ],
-  "slack": [
-    "slack.com"
-  ],
-  "zoom": [
-    "zoom.us"
-  ],
-  "stripe": [
-    "stripe.com"
-  ],
-  "ebay": [
-    "ebay.com"
-  ],
-  "walmart": [
-    "walmart.com"
-  ],
-  "shopify": [
-    "shopify.com"
-  ],
-  "spotify": [
-    "spotify.com"
-  ],
-  "youtube": [
-    "youtube.com",
-    "youtu.be"
-  ],
-  "tiktok": [
-    "tiktok.com"
-  ],
-  "twitter": [
-    "twitter.com",
-    "x.com"
-  ],
-  "discord": [
-    "discord.com",
-    "discord.gg"
-  ],
-  "binance": [
-    "binance.com"
-  ],
-  "coinbase": [
-    "coinbase.com"
-  ],
-  "chase": [
-    "chase.com"
-  ],
-  "hsbc": [
-    "hsbc.com",
-    "hsbc.co.in"
-  ],
-  "dhl": [
-    "dhl.com"
-  ],
-  "fedex": [
-    "fedex.com"
-  ],
-  "ups": [
-    "ups.com"
-  ],
-  "usps": [
-    "usps.com"
-  ],
-  "booking": [
-    "booking.com"
-  ],
-  "airbnb": [
-    "airbnb.com"
-  ],
-  "samsung": [
-    "samsung.com"
-  ],
-  "oracle": [
-    "oracle.com"
-  ],
-  "sbi": [
-    "sbi.co.in",
-    "onlinesbi.sbi",
-    "bank.sbi",
-    "sbi.bank.in"
-  ],
-  "hdfc": [
-    "hdfcbank.com",
-    "hdfc.bank.in"
-  ],
-  "icici": [
-    "icicibank.com",
-    "icici.bank.in"
-  ],
-  "axis": [
-    "axisbank.com",
-    "axis.bank.in"
-  ],
-  "paytm": [
-    "paytm.com"
-  ],
-  "phonepe": [
-    "phonepe.com"
-  ],
-  "upi": [
-    "npci.org.in"
-  ],
-  "irctc": [
-    "irctc.co.in"
-  ],
-  "aadhaar": [
-    "uidai.gov.in"
-  ],
-  "incometax": [
-    "incometax.gov.in"
-  ],
-  "digilocker": [
-    "digilocker.gov.in"
-  ],
-  "iitb": [
-    "iitb.ac.in"
-  ],
-  "iitd": [
-    "iitd.ac.in"
-  ],
-  "ignou": [
-    "ignou.ac.in"
-  ],
-  "du": [
-    "du.ac.in"
-  ],
-  "annauniv": [
-    "annauniv.edu"
-  ]
+  "_comment": "Partial reference list. Unverified country variants, affiliates and payment partners are intentionally omitted.",
+  "brands": {
+    "google": {
+      "owned_domains": [
+        "google.com",
+        "google.co.in"
+      ],
+      "aliases": [
+        "google"
+      ]
+    },
+    "paypal": {
+      "owned_domains": [
+        "paypal.com"
+      ],
+      "aliases": [
+        "paypal"
+      ]
+    },
+    "microsoft": {
+      "owned_domains": [
+        "microsoft.com",
+        "microsoftonline.com"
+      ],
+      "aliases": [
+        "microsoft"
+      ]
+    },
+    "apple": {
+      "owned_domains": [
+        "apple.com"
+      ],
+      "aliases": [
+        "apple"
+      ]
+    },
+    "amazon": {
+      "owned_domains": [
+        "amazon.com",
+        "amazon.in",
+        "amazon.co.uk"
+      ],
+      "aliases": [
+        "amazon"
+      ]
+    },
+    "facebook": {
+      "owned_domains": [
+        "facebook.com",
+        "fb.com"
+      ],
+      "aliases": [
+        "facebook"
+      ]
+    },
+    "instagram": {
+      "owned_domains": [
+        "instagram.com"
+      ],
+      "aliases": [
+        "instagram"
+      ]
+    },
+    "whatsapp": {
+      "owned_domains": [
+        "whatsapp.com"
+      ],
+      "aliases": [
+        "whatsapp"
+      ]
+    },
+    "netflix": {
+      "owned_domains": [
+        "netflix.com"
+      ],
+      "aliases": [
+        "netflix"
+      ]
+    },
+    "github": {
+      "owned_domains": [
+        "github.com"
+      ],
+      "aliases": [
+        "github"
+      ]
+    },
+    "gitlab": {
+      "owned_domains": [
+        "gitlab.com"
+      ],
+      "aliases": [
+        "gitlab"
+      ]
+    },
+    "linkedin": {
+      "owned_domains": [
+        "linkedin.com"
+      ],
+      "aliases": [
+        "linkedin"
+      ]
+    },
+    "yahoo": {
+      "owned_domains": [
+        "yahoo.com"
+      ],
+      "aliases": [
+        "yahoo"
+      ]
+    },
+    "outlook": {
+      "owned_domains": [
+        "outlook.com",
+        "live.com"
+      ],
+      "aliases": [
+        "outlook"
+      ]
+    },
+    "adobe": {
+      "owned_domains": [
+        "adobe.com"
+      ],
+      "aliases": [
+        "adobe"
+      ]
+    },
+    "dropbox": {
+      "owned_domains": [
+        "dropbox.com"
+      ],
+      "aliases": [
+        "dropbox"
+      ]
+    },
+    "salesforce": {
+      "owned_domains": [
+        "salesforce.com"
+      ],
+      "aliases": [
+        "salesforce"
+      ]
+    },
+    "slack": {
+      "owned_domains": [
+        "slack.com"
+      ],
+      "aliases": [
+        "slack"
+      ]
+    },
+    "zoom": {
+      "owned_domains": [
+        "zoom.us"
+      ],
+      "aliases": [
+        "zoom"
+      ]
+    },
+    "stripe": {
+      "owned_domains": [
+        "stripe.com"
+      ],
+      "aliases": [
+        "stripe"
+      ]
+    },
+    "ebay": {
+      "owned_domains": [
+        "ebay.com"
+      ],
+      "aliases": [
+        "ebay"
+      ]
+    },
+    "walmart": {
+      "owned_domains": [
+        "walmart.com"
+      ],
+      "aliases": [
+        "walmart"
+      ]
+    },
+    "shopify": {
+      "owned_domains": [
+        "shopify.com"
+      ],
+      "aliases": [
+        "shopify"
+      ]
+    },
+    "spotify": {
+      "owned_domains": [
+        "spotify.com"
+      ],
+      "aliases": [
+        "spotify"
+      ]
+    },
+    "youtube": {
+      "owned_domains": [
+        "youtube.com",
+        "youtu.be"
+      ],
+      "aliases": [
+        "youtube"
+      ]
+    },
+    "tiktok": {
+      "owned_domains": [
+        "tiktok.com"
+      ],
+      "aliases": [
+        "tiktok"
+      ]
+    },
+    "twitter": {
+      "owned_domains": [
+        "twitter.com",
+        "x.com"
+      ],
+      "aliases": [
+        "twitter"
+      ]
+    },
+    "discord": {
+      "owned_domains": [
+        "discord.com",
+        "discord.gg"
+      ],
+      "aliases": [
+        "discord"
+      ]
+    },
+    "binance": {
+      "owned_domains": [
+        "binance.com"
+      ],
+      "aliases": [
+        "binance"
+      ]
+    },
+    "coinbase": {
+      "owned_domains": [
+        "coinbase.com"
+      ],
+      "aliases": [
+        "coinbase"
+      ]
+    },
+    "chase": {
+      "owned_domains": [
+        "chase.com"
+      ],
+      "aliases": [
+        "chase"
+      ]
+    },
+    "hsbc": {
+      "owned_domains": [
+        "hsbc.com",
+        "hsbc.co.in"
+      ],
+      "aliases": [
+        "hsbc"
+      ]
+    },
+    "dhl": {
+      "owned_domains": [
+        "dhl.com"
+      ],
+      "aliases": [
+        "dhl"
+      ]
+    },
+    "fedex": {
+      "owned_domains": [
+        "fedex.com"
+      ],
+      "aliases": [
+        "fedex"
+      ]
+    },
+    "ups": {
+      "owned_domains": [
+        "ups.com"
+      ],
+      "aliases": [
+        "ups"
+      ]
+    },
+    "usps": {
+      "owned_domains": [
+        "usps.com"
+      ],
+      "aliases": [
+        "usps"
+      ]
+    },
+    "booking": {
+      "owned_domains": [
+        "booking.com"
+      ],
+      "aliases": [
+        "booking"
+      ]
+    },
+    "airbnb": {
+      "owned_domains": [
+        "airbnb.com"
+      ],
+      "aliases": [
+        "airbnb"
+      ]
+    },
+    "samsung": {
+      "owned_domains": [
+        "samsung.com"
+      ],
+      "aliases": [
+        "samsung"
+      ]
+    },
+    "oracle": {
+      "owned_domains": [
+        "oracle.com"
+      ],
+      "aliases": [
+        "oracle"
+      ]
+    },
+    "sbi": {
+      "owned_domains": [
+        "sbi.co.in",
+        "onlinesbi.sbi",
+        "bank.sbi",
+        "sbi.bank.in"
+      ],
+      "aliases": [
+        "sbi",
+        "state bank of india"
+      ]
+    },
+    "hdfc": {
+      "owned_domains": [
+        "hdfcbank.com",
+        "hdfc.bank.in"
+      ],
+      "aliases": [
+        "hdfc",
+        "hdfc bank"
+      ]
+    },
+    "icici": {
+      "owned_domains": [
+        "icicibank.com",
+        "icici.bank.in"
+      ],
+      "aliases": [
+        "icici",
+        "icici bank"
+      ]
+    },
+    "axis": {
+      "owned_domains": [
+        "axisbank.com",
+        "axis.bank.in"
+      ],
+      "aliases": [
+        "axis",
+        "axis bank"
+      ]
+    },
+    "paytm": {
+      "owned_domains": [
+        "paytm.com"
+      ],
+      "aliases": [
+        "paytm"
+      ]
+    },
+    "phonepe": {
+      "owned_domains": [
+        "phonepe.com"
+      ],
+      "aliases": [
+        "phonepe"
+      ]
+    },
+    "upi": {
+      "owned_domains": [
+        "npci.org.in"
+      ],
+      "aliases": [
+        "upi"
+      ]
+    },
+    "irctc": {
+      "owned_domains": [
+        "irctc.co.in"
+      ],
+      "aliases": [
+        "irctc"
+      ]
+    },
+    "aadhaar": {
+      "owned_domains": [
+        "uidai.gov.in"
+      ],
+      "aliases": [
+        "aadhaar",
+        "uidai"
+      ]
+    },
+    "incometax": {
+      "owned_domains": [
+        "incometax.gov.in"
+      ],
+      "aliases": [
+        "incometax",
+        "income tax"
+      ]
+    },
+    "digilocker": {
+      "owned_domains": [
+        "digilocker.gov.in"
+      ],
+      "aliases": [
+        "digilocker"
+      ]
+    },
+    "iitb": {
+      "owned_domains": [
+        "iitb.ac.in"
+      ],
+      "aliases": [
+        "iitb"
+      ]
+    },
+    "iitd": {
+      "owned_domains": [
+        "iitd.ac.in"
+      ],
+      "aliases": [
+        "iitd"
+      ]
+    },
+    "ignou": {
+      "owned_domains": [
+        "ignou.ac.in"
+      ],
+      "aliases": [
+        "ignou"
+      ]
+    },
+    "du": {
+      "owned_domains": [
+        "du.ac.in"
+      ],
+      "aliases": [
+        "du"
+      ]
+    },
+    "annauniv": {
+      "owned_domains": [
+        "annauniv.edu"
+      ],
+      "aliases": [
+        "annauniv"
+      ]
+    },
+    "kotak": {
+      "aliases": [
+        "kotak",
+        "kotak mahindra"
+      ],
+      "owned_domains": [
+        "kotak.com",
+        "kotak.bank.in"
+      ]
+    },
+    "pnb": {
+      "aliases": [
+        "pnb",
+        "punjab national bank"
+      ],
+      "owned_domains": [
+        "pnbindia.in",
+        "pnb.bank.in"
+      ]
+    },
+    "bankofbaroda": {
+      "aliases": [
+        "bankofbaroda",
+        "bank of baroda"
+      ],
+      "owned_domains": [
+        "bankofbaroda.in",
+        "bankofbaroda.bank.in"
+      ]
+    },
+    "canara": {
+      "aliases": [
+        "canara",
+        "canara bank",
+        "canarabank"
+      ],
+      "owned_domains": [
+        "canarabank.com",
+        "canarabank.bank.in"
+      ]
+    },
+    "unionbank": {
+      "aliases": [
+        "unionbank",
+        "union bank",
+        "union bank of india"
+      ],
+      "owned_domains": [
+        "unionbankofindia.bank.in"
+      ]
+    },
+    "idfc": {
+      "aliases": [
+        "idfc",
+        "idfc first",
+        "idfcfirst"
+      ],
+      "owned_domains": [
+        "idfcfirstbank.com",
+        "idfcfirst.bank.in"
+      ]
+    },
+    "googlepay": {
+      "aliases": [
+        "googlepay",
+        "google pay",
+        "gpay"
+      ],
+      "owned_domains": [
+        "pay.google.com"
+      ]
+    },
+    "bhim": {
+      "aliases": [
+        "bhim",
+        "bhim upi"
+      ],
+      "owned_domains": [
+        "bhimupi.org.in"
+      ]
+    },
+    "npci": {
+      "aliases": [
+        "npci",
+        "national payments corporation"
+      ],
+      "owned_domains": [
+        "npci.org.in"
+      ]
+    },
+    "gst": {
+      "aliases": [
+        "gst",
+        "gst portal"
+      ],
+      "owned_domains": [
+        "gst.gov.in"
+      ]
+    },
+    "epfo": {
+      "aliases": [
+        "epfo",
+        "employees provident fund"
+      ],
+      "owned_domains": [
+        "epfindia.gov.in"
+      ]
+    },
+    "passportseva": {
+      "aliases": [
+        "passportseva",
+        "passport seva"
+      ],
+      "owned_domains": [
+        "passportindia.gov.in"
+      ]
+    },
+    "parivahan": {
+      "aliases": [
+        "parivahan",
+        "parivahan seva"
+      ],
+      "owned_domains": [
+        "parivahan.gov.in"
+      ]
+    },
+    "indiapost": {
+      "aliases": [
+        "indiapost",
+        "india post"
+      ],
+      "owned_domains": [
+        "indiapost.gov.in"
+      ]
+    },
+    "umang": {
+      "aliases": [
+        "umang",
+        "umang app"
+      ],
+      "owned_domains": [
+        "web.umang.gov.in"
+      ]
+    },
+    "jio": {
+      "aliases": [
+        "jio",
+        "reliance jio"
+      ],
+      "owned_domains": [
+        "jio.com"
+      ]
+    },
+    "airtel": {
+      "aliases": [
+        "airtel",
+        "bharti airtel"
+      ],
+      "owned_domains": [
+        "airtel.in"
+      ]
+    },
+    "vi": {
+      "aliases": [
+        "vi",
+        "vodafone idea"
+      ],
+      "owned_domains": [
+        "myvi.in"
+      ]
+    },
+    "bsnl": {
+      "aliases": [
+        "bsnl",
+        "bharat sanchar nigam"
+      ],
+      "owned_domains": [
+        "bsnl.co.in"
+      ]
+    },
+    "mahadiscom": {
+      "aliases": [
+        "mahadiscom",
+        "msedcl",
+        "mahavitaran"
+      ],
+      "owned_domains": [
+        "mahadiscom.in"
+      ]
+    },
+    "wbsedcl": {
+      "aliases": [
+        "wbsedcl",
+        "west bengal electricity"
+      ],
+      "owned_domains": [
+        "wbsedcl.in"
+      ]
+    },
+    "flipkart": {
+      "aliases": [
+        "flipkart",
+        "flipkart india"
+      ],
+      "owned_domains": [
+        "flipkart.com"
+      ]
+    },
+    "myntra": {
+      "aliases": [
+        "myntra",
+        "myntra india"
+      ],
+      "owned_domains": [
+        "myntra.com"
+      ]
+    },
+    "meesho": {
+      "aliases": [
+        "meesho",
+        "meesho india"
+      ],
+      "owned_domains": [
+        "meesho.com"
+      ]
+    },
+    "swiggy": {
+      "aliases": [
+        "swiggy",
+        "swiggy india"
+      ],
+      "owned_domains": [
+        "swiggy.com"
+      ]
+    },
+    "zomato": {
+      "aliases": [
+        "zomato",
+        "zomato india"
+      ],
+      "owned_domains": [
+        "zomato.com"
+      ]
+    }
+  }
 }

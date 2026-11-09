@@ -7,7 +7,7 @@ from pydantic import HttpUrl
 
 from app.analyzers import phishing
 from app.core import ssrf
-from app.core.risk import score_risk
+from app.core.risk import score_risk, check_weight
 from app.models.schemas import ErrorResponse, ScanReport
 
 PATH = "/api/v1/scan/url"
@@ -48,7 +48,7 @@ def test_rdap_failure(client, network):
     network.handler = lambda req: network.response(503) if req.headers["host"] == "rdap.org" else handler(req)
     report = scan(client, "https://github.com")
     assert report.risk.classification == "low_risk"
-    assert report.risk.checks_failed == ["RDAP"] and report.risk.confidence == round(len(report.risk.checks_completed) / (len(report.risk.checks_completed) + 1), 2)
+    assert report.risk.checks_failed == ["RDAP"] and report.risk.confidence == round(1 - 1 / (1 + sum(map(check_weight, report.risk.checks_completed))), 2)
     assert any("No significant indicators" in note for note in report.limitations)
 
 

@@ -14,7 +14,12 @@ async def analyze_url(url, engine, settings, observations=None) -> ScanReport:
     host = url.host.strip("[]").rstrip(".")
     resolution = asyncio.create_task(ssrf.safe_resolve(host))
     page = asyncio.create_task(ssrf.safe_fetch(url, page=True, resolution=resolution, observations=observations))
-    sources = [intel.OpenPhish(engine), intel.GoogleSafeBrowsing(settings.google_safe_browsing_key)]
+    sources = [intel.OpenPhish(engine), intel.PhishingDatabase(engine)]
+    source_notes = []
+    if settings.google_safe_browsing_key and settings.google_safe_browsing_key.get_secret_value().strip():
+        sources.append(intel.GoogleSafeBrowsing(settings.google_safe_browsing_key))
+    else:
+        source_notes.append("Google Safe Browsing is not configured")
     checks = {
         "URL structure": asyncio.to_thread(phishing.inspect_url, url),
         "DNS": phishing.dns_indicators(host),
@@ -35,6 +40,8 @@ async def analyze_url(url, engine, settings, observations=None) -> ScanReport:
     for name, outcome in zip(checks, outcomes):
         if isinstance(outcome, Exception):
             ssrf.log_failure(name, outcome)
+            if name == "Certificate transparency" and isinstance(outcome, ssrf.FetchFailure):
+                source_notes.append(str(outcome))
             failed.append(name)
             continue
         if name == "HTTP redirects":
@@ -71,11 +78,13 @@ async def analyze_url(url, engine, settings, observations=None) -> ScanReport:
         if ct is not None:
             certificate.ct_records_count, certificate.ct_notes = ct
         else:
+            certificate.ct_records_count = -1  # Unknown; contract requires an integer.
             certificate.ct_notes.append("Certificate transparency lookup unavailable; count unknown.")
     risk = score_risk(items, completed, failed, authoritative_hit=authoritative_hit)
     limitations = ["Passive checks only. Header findings describe the final response; TLS describes the input host.",
                    "Certificate validity does not prove the site is trustworthy.",
                    "Threat feeds do not cover every malicious site."]
+    limitations.extend(source_notes)
     if failed:
         limitations.append("Incomplete checks: " + ", ".join(failed) + ".")
     if risk.classification == "low_risk":

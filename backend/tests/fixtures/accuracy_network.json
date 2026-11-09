@@ -1,0 +1,49 @@
+{
+  "origin": "github.com",
+  "dns": [
+    "20.207.73.82"
+  ],
+  "ttl": 0,
+  "tls": {
+    "valid": true,
+    "issuer": "CN=Sectigo Public Server Authentication CA DV E36,O=Sectigo Limited,C=GB",
+    "subject": "CN=github.com",
+    "san": [
+      "github.com",
+      "www.github.com"
+    ],
+    "not_before": "2026-10-30T00:00:00Z",
+    "not_after": "2027-01-27T23:59:59Z",
+    "days_remaining": 79,
+    "hostname_match": true,
+    "key_type": "EC",
+    "key_size": 256,
+    "signature_algorithm": "sha256",
+    "chain": [
+      "CN=github.com",
+      "CN=Sectigo Public Server Authentication CA DV E36,O=Sectigo Limited,C=GB",
+      "CN=Sectigo Public Server Authentication Root E46,O=Sectigo Limited,C=GB"
+    ],
+    "ct_records_count": 0,
+    "ct_notes": [],
+    "compromised_ca_flag": false,
+    "findings": [],
+    "disclaimer": "A valid certificate is not proof that the site is safe."
+  },
+  "headers": {
+    "content-type": "text/html; charset=utf-8",
+    "strict-transport-security": "max-age=31536000; includeSubdomains; preload",
+    "x-frame-options": "deny",
+    "x-content-type-options": "nosniff",
+    "referrer-policy": "origin-when-cross-origin, strict-origin-when-cross-origin"
+  },
+  "status": 200,
+  "redirects": [
+    200
+  ],
+  "registration": "2007-10-09T18:20:50Z",
+  "feed": [
+    "https://listed-sample.net/offer"
+  ],
+  "ct": []
+}

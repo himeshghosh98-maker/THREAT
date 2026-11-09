@@ -97,6 +97,7 @@ class FetchResult:
     body: bytes = b""
     failed: bool = False
     headers: httpx.Headers | None = None
+    failure_reason: str | None = None
 
 
 def log_failure(check, exc):
@@ -125,11 +126,13 @@ class FetchFailure(ValueError):
     """Only fixed diagnostic text or numeric HTTP status belongs here."""
 
 
-async def pinned_request(client, current, address, method, max_bytes, json_body, api_key):
+async def pinned_request(client, current, address, method, max_bytes, json_body, api_key, byte_range=None):
     logical = httpx.URL(str(current))
     host = current.host.strip("[]").rstrip(".")
     headers = {"Host": logical.netloc.decode(), "Accept-Encoding": "identity",
                "User-Agent": "Mozilla/5.0 (compatible; ThreatReport/1.0; passive security scanner)"}
+    if byte_range is not None:
+        headers["Range"] = f"bytes=0-{byte_range-1}"
     if api_key is not None:
         headers["X-Goog-Api-Key"] = api_key.get_secret_value()
     pinned = logical.copy_with(host=str(address), fragment=None)
@@ -171,7 +174,7 @@ async def try_addresses(addresses, operation):
 
 
 async def safe_fetch(url, max_redirects=5, timeout=20, max_bytes=1_000_000, *, resolution=None,
-                     json_body=None, api_key=None, observations=None, page=False) -> FetchResult:
+                     json_body=None, api_key=None, observations=None, page=False, byte_range=None) -> FetchResult:
     current = validate_url(url)
     if json_body is not None or api_key is not None:
         if str(current) != "https://safebrowsing.googleapis.com/v4/threatMatches:find":
@@ -188,7 +191,7 @@ async def safe_fetch(url, max_redirects=5, timeout=20, max_bytes=1_000_000, *, r
                 async with httpx.AsyncClient(trust_env=False, timeout=5) as client:
                     async def request(address):
                         method = "POST" if json_body is not None else "HEAD" if page else "GET"
-                        result = await pinned_request(client, current, address, method, max_bytes, json_body, api_key)
+                        result = await pinned_request(client, current, address, method, max_bytes, json_body, api_key, byte_range)
                         if page and not result[3]:
                             if result[0] >= 400:
                                 return await pinned_request(client, current, address, "GET", max_bytes, None, None)
@@ -216,4 +219,6 @@ async def safe_fetch(url, max_redirects=5, timeout=20, max_bytes=1_000_000, *, r
                 current = validate_url(urljoin(str(current), headers["location"]))
     except (ValueError, OSError, dns.exception.DNSException, httpx.HTTPError) as exc:
         log_failure("HTTP fetch", exc)
+        detail = str(exc) if isinstance(exc, (FetchFailure, TransientStatus)) else type(exc).__name__
+        return FetchResult(chain, failed=True, failure_reason=detail)
     return FetchResult(chain, failed=True)

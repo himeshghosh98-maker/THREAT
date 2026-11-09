@@ -55,7 +55,8 @@ def network(monkeypatch):
         if host == "crt.sh":
             return response(data=b"[]", headers={"content-type": "application/json"})
         if host == "raw.githubusercontent.com":
-            return response(data=b"https://listed.example/login", headers={"content-type": "text/plain"})
+            feed = b"https://listed.example/login" if "openphish" in request.url.path else b"https://other.example/feed"
+            return response(data=feed, headers={"content-type": "text/plain"})
         if host == "safebrowsing.googleapis.com":
             return response(data=b"{}", headers={"content-type": "application/json"})
 
@@ -106,6 +107,7 @@ def certificate(signing_key):
 @pytest.fixture(autouse=True)
 def tls_transport(monkeypatch, certificate):
     from app.analyzers import tls
+    tls._CT_CACHE.clear()
     async def handshake(address, port, host, verify):
         return [certificate(host)]
     monkeypatch.setattr(tls, "handshake", handshake)

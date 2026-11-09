@@ -19,7 +19,7 @@ REAL_DNS_ANSWER = ssrf.dns_answer
     ("github.com", "inconclusive"), ("www.google.com", "inconclusive"),
     ("en.wikipedia.org", "inconclusive"), ("www.sbi.co.in", "inconclusive"),
     ("www.iitkgp.ac.in", "inconclusive"), ("paypa1.com", "suspicious"),
-    ("g00gle-login.com", "suspicious"), ("xn--pypal-4ve.com", "high_risk"),
+    ("g00gle-login.com", "high_risk"), ("xn--pypal-4ve.com", "high_risk"),
 ])
 def test_core_outage(client, network, monkeypatch, host, expected):
     async def absent(host, kind):

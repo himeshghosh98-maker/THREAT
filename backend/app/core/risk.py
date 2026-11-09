@@ -9,7 +9,17 @@ HYGIENE_CAP = 6
 BANDS = {"low_risk": (0, 19), "inconclusive": (0, 19), "suspicious": (20, 59),
          "high_risk": (60, 99), "confirmed_malicious": (100, 100)}
 CORE = {"DNS", "HTTP redirects", "TLS"}
+STRONG_FOR_HIGH = 2  # Brand resemblance and credential/suffix context can corroborate.
 MIN_COVERAGE = 0.5
+# Weight units are relative coverage, not estimated probabilities. Transport,
+# message rules and intelligence carry 3; structure/DNS/TLS carry 2; ancillary checks 1.
+CHECK_WEIGHTS = {"HTTP redirects": 3, "Local message rules": 3, "OpenPhish": 3,
+                 "Google Safe Browsing": 3, "Phishing.Database": 3, "URL structure": 2,
+                 "DNS": 2, "TLS": 2, "URL scan blocked or unavailable": 3}
+
+
+def check_weight(name):
+    return CHECK_WEIGHTS.get(name.split(": ")[-1], 1)
 
 
 def strong(item):
@@ -18,12 +28,13 @@ def strong(item):
             or item.category == "homograph" and key != "idn-label"
             or item.category == "domain_age" and item.severity == "high"
             or item.category == "social_engineering" and item.severity == "high"
-            or key in {"brand-subdomain", "embedded-url", "tls-ca"})
+            or key in {"brand-subdomain", "brand-path", "brand-corroboration", "ip-credential", "embedded-url", "tls-ca"})
 
 
 def score_risk(indicators: list[Indicator], completed: list[str], failed: list[str],
                *, authoritative_hit: bool = False) -> Risk:
-    coverage = len(completed) / max(1, len(completed) + len(failed))
+    finished = sum(map(check_weight, completed))
+    coverage = finished / max(1, finished + sum(map(check_weight, failed)))
     strong_items = [item for item in indicators if strong(item)]
     hygiene = min(HYGIENE_CAP, sum(min(2, WEIGHTS[i.severity]) for i in indicators if not strong(i)))
     score = hygiene + sum(WEIGHTS[i.severity] for i in strong_items)
@@ -33,7 +44,7 @@ def score_risk(indicators: list[Indicator], completed: list[str], failed: list[s
     missing_core = any(name.split(": ")[-1] in CORE or "URL scan blocked" in name for name in failed)
     if authoritative_hit:
         classification = "confirmed_malicious"
-    elif not urgent_message and (len(strong_items) >= 2 or any(i.severity == "critical" for i in strong_items)):
+    elif not urgent_message and (len(strong_items) >= STRONG_FOR_HIGH or any(i.severity == "critical" for i in strong_items)):
         classification = "high_risk"
     elif strong_items:
         classification = "suspicious"
@@ -43,7 +54,7 @@ def score_risk(indicators: list[Indicator], completed: list[str], failed: list[s
         classification = "low_risk"
     floor, ceiling = BANDS[classification]
     return Risk(classification=classification, score=max(floor, min(ceiling, score)),
-                confidence=round(coverage, 2), checks_completed=completed, checks_failed=failed)
+                confidence=min(0.99 if failed else 1.0, round(coverage, 2)), checks_completed=completed, checks_failed=failed)
 
 
 def assess(indicators: list[Indicator], check: str) -> Risk:
