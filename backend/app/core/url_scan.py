@@ -13,7 +13,7 @@ from app.models.schemas import Onchain, ScanReport
 async def analyze_url(url, engine, settings, observations=None) -> ScanReport:
     host = url.host.strip("[]").rstrip(".")
     resolution = asyncio.create_task(ssrf.safe_resolve(host))
-    page = asyncio.create_task(ssrf.safe_fetch(url, resolution=resolution, observations=observations))
+    page = asyncio.create_task(ssrf.safe_fetch(url, page=True, resolution=resolution, observations=observations))
     sources = [intel.OpenPhish(engine), intel.GoogleSafeBrowsing(settings.google_safe_browsing_key)]
     checks = {
         "URL structure": asyncio.to_thread(phishing.inspect_url, url),
@@ -34,6 +34,7 @@ async def analyze_url(url, engine, settings, observations=None) -> ScanReport:
     authoritative_hit = False
     for name, outcome in zip(checks, outcomes):
         if isinstance(outcome, Exception):
+            ssrf.log_failure(name, outcome)
             failed.append(name)
             continue
         if name == "HTTP redirects":

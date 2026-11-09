@@ -58,14 +58,18 @@ async def handshake(address, port, host, verify):
 async def peer_chain(url, resolution=None):
     url = ssrf.validate_url(url)
     host = url.host.strip("[]").rstrip(".")
-    async with asyncio.timeout(8):
+    async with asyncio.timeout(20):
         addresses = await asyncio.shield(resolution) if resolution is not None else await ssrf.safe_resolve(host)
-        address = ssrf.public_ip(str(addresses[0]))
-        try:
-            return await handshake(address, url.port, host, True), True
-        except ssl.SSLCertVerificationError:
-            # Inspection only. Retry the same pinned IP and send no application data.
-            return await handshake(address, url.port, host, False), False
+
+        async def connect(address):
+            try:
+                return await handshake(address, url.port, host, True), True
+            except ssl.SSLCertVerificationError:
+                # Inspect the same validated peer without sending application data.
+                return await handshake(address, url.port, host, False), False
+
+        _, result = await ssrf.try_addresses(addresses, connect)
+        return result
 
 
 def matches_dns(host, pattern):
@@ -155,12 +159,12 @@ async def analyze(url, resolution=None, observations=None):
 
 async def transparency(host):
     query = urlencode({"q": host, "output": "json"})
-    result = await ssrf.safe_fetch(f"https://crt.sh/?{query}", timeout=8)
+    result = await ssrf.safe_fetch(f"https://crt.sh/?{query}", timeout=15)
     if result.failed or not result.chain or result.chain[-1].status != 200:
-        raise ValueError("Certificate transparency unavailable")
+        raise ssrf.FetchFailure("Certificate transparency unavailable")
     records = json.loads(result.body)
     if not isinstance(records, list):
-        raise ValueError("Unexpected CT response")
+        raise ssrf.FetchFailure("Unexpected CT response")
     unique = {}
     for row in records:
         issued = datetime.fromisoformat(row["not_before"])

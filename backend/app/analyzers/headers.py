@@ -1,6 +1,7 @@
 import re
 
 from app.analyzers.phishing import evidence
+from app.core import ssrf
 from app.models.schemas import SecurityHeader
 
 LIMIT = "Only the final HTTP response was inspected. Other pages and browser behavior may differ."
@@ -9,7 +10,7 @@ LIMIT = "Only the final HTTP response was inspected. Other pages and browser beh
 async def analyze(page):
     result = await page
     if result.failed or result.headers is None or not result.chain or result.chain[-1].status >= 400:
-        raise ValueError("Page response unavailable")
+        raise ssrf.FetchFailure("Page response unavailable")
     headers = result.headers
     https = result.chain[-1].url.startswith("hxxps://")
     findings, indicators = [], []
@@ -30,6 +31,10 @@ async def analyze(page):
         if header == "strict-transport-security" and not https:
             continue
         if header == "x-frame-options" and re.search(r"(?:^|;)\s*frame-ancestors\s", headers.get("content-security-policy", ""), re.I):
+            continue
+        if header == "content-security-policy" and not headers.get(header) and headers.get(header + "-report-only"):
+            finding(header, "CSP in report-only mode", "The final response reports policy violations without enforcing CSP.",
+                    impact, remediation)
             continue
         if not headers.get(header):
             finding(header, f"Missing {label}", f"{label} was absent from the final response.", impact, remediation)

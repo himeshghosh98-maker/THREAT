@@ -38,7 +38,8 @@ class ThreatIntelSource(ABC):
     async def check(self, url: HttpUrl, domain: str) -> SourceResult:
         try:
             return await self._lookup(url, domain)
-        except Exception:
+        except Exception as exc:
+            ssrf.log_failure(self.name, exc)
             return SourceResult(self.name, False, "Source unavailable; lookup incomplete.", "unavailable")
 
     @abstractmethod
@@ -63,7 +64,7 @@ class OpenPhish(ThreatIntelSource):
                 return row.entries
         result = await ssrf.safe_fetch(FEED, max_redirects=0)
         if result.failed or not result.chain or result.chain[-1].status != 200:
-            raise ValueError("Feed download unavailable")
+            raise ssrf.FetchFailure("Feed download unavailable")
         urls, hosts = set(), set()
         for line in result.body.decode().splitlines():
             if not line.strip() or line.startswith("#"):
@@ -72,7 +73,7 @@ class OpenPhish(ThreatIntelSource):
             urls.add(digest(str(url).partition("#")[0]))
             hosts.add(digest(url.host.strip("[]").lower().rstrip(".")))
         if not urls:
-            raise ValueError("Empty feed")
+            raise ssrf.FetchFailure("Empty feed")
         entries = {"urls": sorted(urls), "hosts": sorted(hosts)}
         insert = sqlite_insert if self.engine.dialect.name == "sqlite" else postgres_insert
         stmt = insert(FeedSnapshot).values(source=self.name, refreshed_at=now, entries=entries)
@@ -107,11 +108,11 @@ class GoogleSafeBrowsing(ThreatIntelSource):
         result = await ssrf.safe_fetch("https://safebrowsing.googleapis.com/v4/threatMatches:find",
                                       json_body=payload, api_key=self.key)
         if result.failed or not result.chain or result.chain[-1].status != 200:
-            raise ValueError("Lookup unavailable")
+            raise ssrf.FetchFailure("Lookup unavailable")
         body = json.loads(result.body)
         if body == {} or body == {"matches": []}:
             return SourceResult(self.name, False, NO_MATCH, "ok")
         if not isinstance(body.get("matches"), list) or not any(
                 m.get("threat", {}).get("url") == target for m in body["matches"]):
-            raise ValueError("Unexpected lookup response")
+            raise ssrf.FetchFailure("Unexpected lookup response")
         return SourceResult(self.name, True, "Submitted URL matched a Google threat list.", "ok", True)

@@ -132,6 +132,8 @@ def mock_registry(monkeypatch):
             return {"onchain": state.model_dump(mode="json"), "block": id + 1}
 
         def inspect(self, receipt, history):
+            if receipt["onchain"]["chain_report_id"] not in ledger:
+                raise registry.MissingReceipt()
             entry = ledger[receipt["onchain"]["chain_report_id"]]
             return entry["digest"], entry["status"], entry["history"] if history else []
 

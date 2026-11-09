@@ -40,7 +40,7 @@ def test_included_fields_change_hash(client, path):
     for key in steps[:-1]:
         parent = parent[int(key)] if key.isdecimal() else getattr(parent, key)
     changes = {"id": uuid4() if path == "id" else "another-indicator", "created_at": report.created_at + timedelta(seconds=1),
-               "input_type": "message", "domain": "different.example", "classification": "inconclusive",
+               "input_type": "message", "domain": "different.example", "classification": "high_risk",
                "score": 99, "confidence": 0.2, "category": "dns", "severity": "critical", "valid": False,
                "issuer": "CN=Other CA", "not_after": report.tls.not_after + timedelta(days=1),
                "compromised_ca_flag": True, "source": "Other feed", "matched": True}
@@ -57,7 +57,7 @@ def test_publication_status_and_errors(client, mock_registry, monkeypatch):
     record = mock_registry[id]
     assert record["category"] == report["risk"]["classification"]
     record["status"] = "disputed"
-    assert client.get(path).json()["onchain"]["status"] == "disputed"
+    assert client.get(path).json()["onchain"]["status"] == "published"
     assert client.post(path + "/publish").json()["onchain"]["status"] == "disputed"
     assert len(mock_registry) == 1
     assert client.get(path + "/verify").json()["status"] == "disputed"
@@ -70,6 +70,8 @@ def test_publication_status_and_errors(client, mock_registry, monkeypatch):
     failed = client.get(path + "/verify")
     assert failed.status_code == 503 and failed.json()["error"]["code"] == "chain_unavailable"
     assert "RPC detail" not in failed.text
+    assert client.get(path).json() == published
+    assert published in client.get("/api/v1/reports").json()["items"]
     fresh = client.post("/api/v1/scan/message", json={"message": "hello"}).json()
     failed = client.post("/api/v1/reports/" + fresh["id"] + "/publish")
     assert failed.status_code == 503 and failed.json()["error"]["code"] == "chain_unavailable"

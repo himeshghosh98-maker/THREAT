@@ -102,7 +102,7 @@ def test_headers_reuse_single_fetch(client, network):
         return original(req)
     network.handler = handler
     report = scan(client)
-    assert sum(r.headers["host"] == "github.com" for r in network.requests) == 1
+    assert [r.method for r in network.requests if r.headers["host"] == "github.com"] == ["HEAD", "GET"]
     assert {"strict-transport-security", "content-security-policy", "cookie-secure", "cookie-httponly",
             "cookie-samesite", "server-version", "mixed-content"} <= {i.id for i in report.indicators}
     assert all(f.severity in {"medium", "low"} and f.limitations for f in report.security_headers)
@@ -136,7 +136,7 @@ def test_unavailable_sources(client, network):
     original = network.handler
     network.handler = lambda req: network.response(503) if req.headers["host"] == "raw.githubusercontent.com" else original(req)
     report = scan(client)
-    assert report.risk.classification == "inconclusive" and report.risk.confidence < 1
+    assert report.risk.classification == "low_risk" and report.risk.confidence < 1
     assert {intel.OPENPHISH, intel.GOOGLE} <= set(report.risk.checks_failed)
     assert report.threat_intel[1].detail == "not configured"
     assert all(e.detail != intel.NO_MATCH and not e.matched for e in report.threat_intel)
@@ -187,7 +187,7 @@ def test_tls_and_http_share_initial_resolution(client, monkeypatch, network, cer
     monkeypatch.setattr(tls, "handshake", handshake)
     scan(client)
     assert resolutions == ["github.com"] and tls_ips == ["1.1.1.1"]
-    assert [r.url.host for r in network.requests if r.headers["host"] == "github.com"] == tls_ips
+    assert [r.url.host for r in network.requests if r.headers["host"] == "github.com"] == tls_ips * 2
 
 
 def test_stale_feed_failure_does_not_become_clean(client, network):

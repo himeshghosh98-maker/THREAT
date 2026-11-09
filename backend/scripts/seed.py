@@ -79,11 +79,15 @@ def main():
         with Session(engine) as db:
             seed(db)
             if settings.chain_mode == "local":
-                row = db.get(ReportRow, str(uuid5(NAMESPACE_URL, "threat-intel:seed:0")))
-                try:
-                    publish(db, row, settings)
-                except ChainUnavailable:
-                    pass
+                for index in range(7):
+                    row = db.get(ReportRow, str(uuid5(NAMESPACE_URL, f"threat-intel:seed:{index}")))
+                    if (row.receipt and row.receipt["onchain"]["network"] not in {"local", "local-stub"}
+                            or index != 0 and not row.receipt):
+                        continue
+                    try:
+                        publish(db, row, settings)
+                    except ChainUnavailable:
+                        break
     finally:
         engine.dispose()
 

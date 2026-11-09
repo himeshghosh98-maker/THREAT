@@ -1,6 +1,7 @@
 """The only outbound HTTP transport. Resolve and pin a new connection on every hop."""
 import asyncio
 import ipaddress
+import logging
 import re
 from dataclasses import dataclass
 from urllib.parse import urljoin, urlsplit
@@ -63,8 +64,15 @@ def validate_url(value: str | HttpUrl) -> HttpUrl:
 
 
 async def dns_answer(host, record):
-    return await dns.asyncresolver.resolve(host + ".", record, search=False, lifetime=4,
-                                          raise_on_no_answer=False)
+    for attempt in range(2):
+        try:
+            return await dns.asyncresolver.resolve(host + ".", record, search=False, lifetime=4,
+                                                   raise_on_no_answer=False)
+        except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer):
+            return ()
+        except (dns.exception.Timeout, dns.resolver.NoNameservers):
+            if attempt:
+                raise
 
 
 async def safe_resolve(host: str) -> list[IP]:
@@ -79,7 +87,7 @@ async def safe_resolve(host: str) -> list[IP]:
     answers = await asyncio.gather(dns_answer(host, "A"), dns_answer(host, "AAAA"))
     addresses = [public_ip(record.address) for answer in answers for record in answer]
     if not addresses:
-        raise OSError("No address records.")
+        raise FetchFailure("No address records")
     return addresses
 
 
@@ -91,53 +99,121 @@ class FetchResult:
     headers: httpx.Headers | None = None
 
 
-async def safe_fetch(url, max_redirects=5, timeout=8, max_bytes=1_000_000, *, resolution=None, json_body=None, api_key=None, observations=None) -> FetchResult:
+def log_failure(check, exc):
+    # Untrusted exception text may contain the entire URL, headers or response.
+    # Only emit our fixed messages, DNS/transport categories and OS error numbers.
+    if isinstance(exc, (TransientStatus, FetchFailure)):
+        detail = str(exc)
+    elif isinstance(exc, BlockedTarget):
+        detail = "Destination rejected by policy"
+    elif isinstance(exc, dns.exception.DNSException):
+        detail = "DNS lookup failed"
+    elif isinstance(exc, TimeoutError) or isinstance(exc, httpx.TimeoutException):
+        detail = "Request deadline expired"
+    else:
+        detail = "Operation failed"
+    errno = getattr(exc, "errno", None)
+    logging.getLogger(__name__).warning("%s %s: %s%s", check, type(exc).__name__, detail,
+                                        f" (errno {errno})" if isinstance(errno, int) else "")
+
+
+class TransientStatus(OSError):
+    """A retryable upstream HTTP status."""
+
+
+class FetchFailure(ValueError):
+    """Only fixed diagnostic text or numeric HTTP status belongs here."""
+
+
+async def pinned_request(client, current, address, method, max_bytes, json_body, api_key):
+    logical = httpx.URL(str(current))
+    host = current.host.strip("[]").rstrip(".")
+    headers = {"Host": logical.netloc.decode(), "Accept-Encoding": "identity",
+               "User-Agent": "Mozilla/5.0 (compatible; ThreatReport/1.0; passive security scanner)"}
+    if api_key is not None:
+        headers["X-Goog-Api-Key"] = api_key.get_secret_value()
+    pinned = logical.copy_with(host=str(address), fragment=None)
+    async with client.stream(method, pinned, headers=headers, json=json_body, follow_redirects=False,
+                             extensions={"sni_hostname": host}) as response:
+        if response.status_code in {502, 503, 504} and method != "POST":
+            raise TransientStatus(f"HTTP status {response.status_code}")
+        body = bytearray()
+        mime = response.headers.get("content-type", "").partition(";")[0].lower()
+        textual = mime.startswith("text/") or mime in {"application/json", "application/rdap+json"}
+        if (method != "HEAD" and not response.has_redirect_location and textual
+                and "attachment" not in response.headers.get("content-disposition", "").lower()
+                and response.headers.get("content-encoding", "identity").lower() == "identity"):
+            async for chunk in response.aiter_raw():
+                if len(body) + len(chunk) > min(max_bytes, 1_000_000):
+                    raise FetchFailure("Response exceeded byte limit")
+                body.extend(chunk)
+        return response.status_code, response.headers, bytes(body), response.has_redirect_location
+
+
+async def try_addresses(addresses, operation):
+    # Validate the entire answer before opening even the first connection.
+    ordered = sorted({public_ip(str(a)) for a in addresses}, key=lambda ip: (ip.version, int(ip)))
+    if not ordered:
+        raise FetchFailure("No address records")
+    retried_status = False
+    for address in [*ordered, ordered[0]]:
+        try:
+            async with asyncio.timeout(5):
+                return address, await operation(address)
+        except (OSError, httpx.TransportError) as exc:
+            log_failure("Pinned connection", exc)
+            if isinstance(exc, TransientStatus):
+                if retried_status:
+                    raise
+                retried_status = True
+            last = exc
+    raise last
+
+
+async def safe_fetch(url, max_redirects=5, timeout=20, max_bytes=1_000_000, *, resolution=None,
+                     json_body=None, api_key=None, observations=None, page=False) -> FetchResult:
     current = validate_url(url)
     if json_body is not None or api_key is not None:
         if str(current) != "https://safebrowsing.googleapis.com/v4/threatMatches:find":
             raise BlockedTarget("Invalid intelligence endpoint.")
         max_redirects = 0
-    chain: list[Redirect] = []
+    chain = []
     try:
         async with asyncio.timeout(timeout):
             for hop in range(min(max_redirects, 5) + 1):
                 host = current.host.strip("[]").rstrip(".")
-                if hop == 0 and resolution is not None:
-                    addresses = await asyncio.shield(resolution)
-                else:
-                    addresses = await safe_resolve(host)
-                address = public_ip(str(addresses[0]))
-                logical = httpx.URL(str(current))
-                pinned = logical.copy_with(host=str(address), fragment=None)
-                headers = {"Host": logical.netloc.decode(), "Accept-Encoding": "identity"}
-                if api_key is not None:
-                    headers["X-Goog-Api-Key"] = api_key.get_secret_value()
-                # A fresh client prevents cross-origin cookie and TLS connection reuse.
-                async with httpx.AsyncClient(trust_env=False, timeout=timeout) as client:
-                    async with client.stream("POST" if json_body is not None else "GET", pinned, headers=headers,
-                                             json=json_body, follow_redirects=False,
-                                             extensions={"sni_hostname": host}) as response:
-                        if observations is not None:
-                            observations.add(("ip", str(address)))
-                        chain.append(Redirect(url=display_url(current), status=response.status_code,
-                                              domain=host))
-                        if response.has_redirect_location:
-                            if hop >= min(max_redirects, 5):
-                                break
-                            current = validate_url(urljoin(str(current), response.headers["location"]))
-                            continue
-                        content_type = response.headers.get("content-type", "").partition(";")[0].lower()
-                        textual = content_type.startswith("text/") or content_type in {
-                            "application/json", "application/rdap+json"}
-                        if (not textual or "attachment" in response.headers.get("content-disposition", "").lower()
-                                or response.headers.get("content-encoding", "identity").lower() != "identity"):
-                            return FetchResult(chain, headers=response.headers)
-                        body = bytearray()
-                        async for chunk in response.aiter_raw():
-                            if len(body) + len(chunk) > min(max_bytes, 1_000_000):
-                                return FetchResult(chain, failed=True)
-                            body.extend(chunk)
-                        return FetchResult(chain, bytes(body), headers=response.headers)
-    except (ValueError, OSError, TimeoutError, dns.exception.DNSException, httpx.HTTPError):
-        pass
+                addresses = (await asyncio.shield(resolution) if hop == 0 and resolution is not None
+                             else await safe_resolve(host))
+                # Fresh client on every hop prevents cookie and connection reuse across origins.
+                async with httpx.AsyncClient(trust_env=False, timeout=5) as client:
+                    async def request(address):
+                        method = "POST" if json_body is not None else "HEAD" if page else "GET"
+                        result = await pinned_request(client, current, address, method, max_bytes, json_body, api_key)
+                        if page and not result[3]:
+                            if result[0] >= 400:
+                                return await pinned_request(client, current, address, "GET", max_bytes, None, None)
+                            if "html" in result[1].get("content-type", "").lower():
+                                # Optional bounded body inspection. Retain the final HEAD metadata
+                                # when the body is larger than the allowed inspection window.
+                                try:
+                                    get = await pinned_request(client, current, address, "GET", max_bytes, None, None)
+                                except FetchFailure as exc:
+                                    log_failure("Page body", exc)
+                                else:
+                                    if get[0] < 400:
+                                        return get
+                        return result
+                    address, (status, headers, body, redirect) = await try_addresses(addresses, request)
+                if observations is not None:
+                    observations.add(("ip", str(address)))
+                chain.append(Redirect(url=display_url(current), status=status, domain=host))
+                if not redirect:
+                    if status >= 400:
+                        log_failure("HTTP", FetchFailure(f"HTTP status {status}"))
+                    return FetchResult(chain, body, headers=headers)
+                if hop >= min(max_redirects, 5):
+                    raise FetchFailure("Redirect limit exceeded")
+                current = validate_url(urljoin(str(current), headers["location"]))
+    except (ValueError, OSError, dns.exception.DNSException, httpx.HTTPError) as exc:
+        log_failure("HTTP fetch", exc)
     return FetchResult(chain, failed=True)

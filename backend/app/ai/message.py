@@ -1,15 +1,20 @@
 import re
 
 from app.ai.privacy import CONTACT_OR_LINK, EMAIL, PHONE, display_link, refang
+from app.analyzers.phishing import BRANDS
 from app.models.schemas import Impersonation, Indicator, MessageAnalysis
 
 URGENCY = re.compile(r"\b(urgent(?:ly)?|immediately|act now|final notice|within \d+ (?:hours?|minutes?)|last chance)\b", re.I)
 JOB = re.compile(r"\b(job|recruiter|employment|hiring|interview)\b", re.I)
 PARCEL = re.compile(r"\b(parcel|package|courier|redelivery|delivery)\b", re.I)
-FEE = re.compile(r"\b(?:pay|remit|deposit|fee|payment)\b", re.I)
-CREDENTIALS = re.compile(r"\b(?:send|reply with|share|enter|provide)\b.{0,35}\b(?:otp|pin|password|passcode)\b", re.I)
+CREDENTIALS = re.compile(r"\b(?:send|reply with|share|enter|provide)\b.{0,35}\b(?:otp|pin|cvv|password|passcode)\b", re.I)
 KYC = re.compile(r"\bkyc\b", re.I)
-BRAND = re.compile(r"\b(sbi|hdfc|icici|axis bank|paytm|india post|fedex|dhl)\b", re.I)
+BRAND = re.compile(r"\b(?:" + "|".join(map(re.escape, ["axis bank", "india post", *BRANDS])) + r")\b", re.I)
+ADVANCE = re.compile(r"\b(?:(?:pay|send|remit|submit)\b.{0,40}\b(?:fee|deposit|payment)|(?:registration|processing) fee (?:required|due)|refundable deposit|pay to receive)\b", re.I)
+DOCUMENTS = re.compile(r"\b(?:send|upload|submit|provide)\b.{0,40}\b(?:documents?|passport|aadhaar|identity proof)\b", re.I)
+REWARD = re.compile(r"\b(?:claim|collect|receive|won)\b.{0,35}\b(?:refund|prize|lottery|jackpot)\b", re.I)
+COLLECT = re.compile(r"\bupi collect(?:ion)? request|\b(?:approve|accept)\b.{0,25}\bupi\b", re.I)
+BLOCK = re.compile(r"\baccount\b.{0,30}\b(?:block(?:ed)?|suspend(?:ed)?|frozen)\b", re.I)
 
 
 def unique(values):
@@ -25,24 +30,34 @@ def analyze_message(message: str) -> tuple[MessageAnalysis, list[Indicator]]:
     signals = unique(m.group().lower() for m in URGENCY.finditer(message))
     indicators = []
 
-    def flag(key, title, detail):
+    def flag(key, title, strong=True):
         indicators.append(Indicator(id=key, category="social_engineering", title=title,
-                         severity="medium", evidence=detail, source="Local message rules"))
+                         severity="high" if strong else "low", evidence=title, source="Local message rules"))
 
     if signals:
-        flag("urgent-language", "Time pressure", "The message uses urgency language.")
-    if JOB.search(message) and FEE.search(message):
-        flag("job-fee", "Job-related payment request", "Employment language appears alongside a fee or payment request.")
-    if PARCEL.search(message) and FEE.search(message):
-        flag("delivery-fee", "Delivery payment request", "A delivery message refers to a fee or payment.")
+        flag("urgent-language", "Time pressure", bool(links))
+    if JOB.search(message) and ADVANCE.search(message):
+        flag("job-fee", "Job-related payment request")
+    elif ADVANCE.search(message):
+        flag("advance-fee", "Advance-fee request")
+    if JOB.search(message) and DOCUMENTS.search(message):
+        flag("job-documents", "Employment document solicitation")
+    if REWARD.search(message):
+        flag("reward-claim", "Refund or prize solicitation")
+    if COLLECT.search(message):
+        flag("upi-collect", "UPI collect request")
+    if BLOCK.search(message) and not KYC.search(message):
+        flag("account-threat", "Account restriction threat")
+    if PARCEL.search(message) and ADVANCE.search(message):
+        flag("delivery-fee", "Delivery payment request")
     if KYC.search(message) and (links or signals or re.search(r"block|suspend", message, re.I)):
-        flag("kyc-request", "Pressured identity verification", "KYC language occurs with a link, time pressure or account restriction.")
+        flag("kyc-request", "Pressured identity verification")
     if CREDENTIALS.search(message) and not re.search(r"\b(?:never|do not|don't)\s+(?:share|send|provide|enter)", message, re.I):
-        flag("credential-request", "Credential solicitation", "The message asks for a password, PIN or one-time code.")
+        flag("credential-request", "Credential solicitation")
     brand = BRAND.search(message)
-    target = brand.group() if brand and indicators else None
+    target = brand.group() if brand and any(i.severity == "high" for i in indicators) else None
     if target:
-        flag("claimed-identity", "Possible impersonation", f"The message references {target} alongside a solicitation or pressure cue.")
+        flag("claimed-identity", "Possible impersonation", bool(links))
     emails = [re.sub(r"\s*\[at\]\s*", "@", m[0], flags=re.I).replace("[.]", ".").lower().replace("[dot]", ".")
               for m in EMAIL.finditer(message)]
     analysis = MessageAnalysis(extracted_urls=[display_link(link) for link in links],

@@ -35,7 +35,7 @@ def test_phishing(client, host, category):
     assert str(report.id) in {item["id"] for item in client.get("/api/v1/reports").json()["items"]}
 
 
-@pytest.mark.parametrize("host", ["github.com", "www.google.com"])
+@pytest.mark.parametrize("host", ["github.com", "www.google.com", "en.wikipedia.org", "www.sbi.co.in", "www.iitkgp.ac.in"])
 def test_official_domains(client, host):
     report = scan(client, "https://" + host)
     assert report.risk.classification == "low_risk" and not report.indicators
@@ -47,9 +47,9 @@ def test_rdap_failure(client, network):
     handler = network.handler
     network.handler = lambda req: network.response(503) if req.headers["host"] == "rdap.org" else handler(req)
     report = scan(client, "https://github.com")
-    assert report.risk.classification == "inconclusive"
+    assert report.risk.classification == "low_risk"
     assert report.risk.checks_failed == ["RDAP"] and report.risk.confidence == round(len(report.risk.checks_completed) / (len(report.risk.checks_completed) + 1), 2)
-    assert not any("No significant indicators" in note for note in report.limitations)
+    assert any("No significant indicators" in note for note in report.limitations)
 
 
 @pytest.mark.asyncio

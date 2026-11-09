@@ -81,8 +81,16 @@ def inspect_url(url: HttpUrl) -> list[Indicator]:
         flag("ip-literal", "Numeric destination", "The authority is a literal IP address.")
     if parts.subdomain and len(parts.subdomain.split(".")) > 3:
         flag("deep-subdomain", "Deeply nested hostname", "More than three subdomain labels precede the registered domain.")
-    if any(value.lower().startswith(("http://", "https://")) for _, value in parse_qsl(url.query or "")):
-        flag("embedded-url", "URL-valued parameter", "A query parameter contains an HTTP(S) destination.")
+    destinations = [value for _, value in parse_qsl(url.query or "") if value.lower().startswith(("http://", "https://"))]
+    for value in destinations:
+        try:
+            target = HttpUrl(value)
+        except ValueError:
+            continue
+        if registered(target.host) == reg:
+            continue
+        flag("embedded-url", "URL-valued parameter", "A query parameter contains an external HTTP(S) destination.")
+        break
     if host.split(".")[-1] in TLDS:
         flag("listed-tld", "Listed suffix", "The final label appears in the local suffix watchlist.")
     if len(str(url)) > 200:
@@ -95,13 +103,23 @@ def inspect_url(url: HttpUrl) -> list[Indicator]:
 async def domain_age(host: str, observations=None) -> list[Indicator]:
     domain = extract(host).top_domain_under_public_suffix
     if not domain:
-        raise ValueError("No registrable domain")
+        raise ssrf.FetchFailure("No registrable domain")
     result = await ssrf.safe_fetch(f"https://rdap.org/domain/{domain}")
     if result.failed or not result.chain or result.chain[-1].status != 200:
-        raise ValueError("RDAP unavailable")
+        # Fall back to IANA's DNS bootstrap when the RDAP redirector is unavailable.
+        bootstrap = await ssrf.safe_fetch("https://data.iana.org/rdap/dns.json")
+        if not bootstrap.failed and bootstrap.chain and bootstrap.chain[-1].status == 200:
+            services = json.loads(bootstrap.body)["services"]
+            suffix = domain.rsplit(".", 1)[-1]
+            bases = next((bases for suffixes, bases in services if suffix in suffixes), [])
+            base = next((url for url in bases if url.startswith("https://")), None)
+            if base:
+                result = await ssrf.safe_fetch(base.rstrip("/") + "/domain/" + domain)
+    if result.failed or not result.chain or result.chain[-1].status != 200:
+        raise ssrf.FetchFailure("RDAP unavailable")
     record = json.loads(result.body)
     if record.get("ldhName", "").lower().rstrip(".") != domain:
-        raise ValueError("RDAP domain mismatch")
+        raise ssrf.FetchFailure("RDAP domain mismatch")
     if observations is not None:
         for entity in record.get("entities", []):
             if "registrar" in entity.get("roles", []):
@@ -113,7 +131,7 @@ async def domain_age(host: str, observations=None) -> list[Indicator]:
              if event.get("eventAction") == "registration"]
     days = (datetime.now(UTC) - min(dates)).days
     if days < 0:
-        raise ValueError("Invalid registration date")
+        raise ssrf.FetchFailure("Invalid registration date")
     if days >= 180:
         return []
     return [evidence("recent-domain", "domain_age", "Recently registered domain",
@@ -122,12 +140,14 @@ async def domain_age(host: str, observations=None) -> list[Indicator]:
 
 async def dns_indicators(host: str) -> list[Indicator]:
     a, mx = await asyncio.gather(ssrf.dns_answer(host, "A"), ssrf.dns_answer(registered(host), "MX"))
+    if not a:
+        await ssrf.safe_resolve(host)  # IPv6-only hosts can still complete DNS inspection.
     items = []
     if not mx or all(str(record.exchange) == "." for record in mx):
         items.append(evidence("no-mx", "dns", "No mail exchanger", "low",
                               "The registered domain advertises no mail exchanger.", "DNS MX"))
-    if a.rrset is not None and a.rrset.ttl < 60:
-        items.append(evidence("low-ttl", "dns", "Short address lifetime", "low",
+    if getattr(a, "rrset", None) is not None and a.rrset.ttl < 60:
+        items.append(evidence("low-ttl", "dns", "Short address lifetime", "info",
                               f"The A record TTL is {a.rrset.ttl} seconds.", "DNS A"))
     if len(a) > 8:
         items.append(evidence("many-addresses", "dns", "Many addresses", "low",

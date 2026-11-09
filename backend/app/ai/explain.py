@@ -26,11 +26,11 @@ class Narrative(BaseModel):
 
 
 def explain(risk: Risk, indicators: list[Indicator]) -> Explanation:
-    if indicators:
+    if risk.classification == "low_risk":
+        summary = LOW
+    elif indicators:
         first = indicators[0]
         summary = f"{first.title} [{first.id}]."
-    elif risk.classification == "low_risk":
-        summary = LOW
     else:
         summary = "Some checks were incomplete. The available evidence is inconclusive."
     return Explanation(summary=summary, tactics=[f"{i.title} [{i.id}]" for i in indicators],
