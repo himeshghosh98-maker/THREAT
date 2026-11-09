@@ -16,6 +16,8 @@ Copy-Item .env.example .env     # Initial setup only
 
 Open http://localhost:8000/docs for the interactive API. The seed command creates seven fixtures with stable IDs, including two synthetic clusters. It preserves published report content and attempts to publish the first fixture when the local registry is reachable.
 
+For the live demonstration, run `.\scripts\prepare_demo.ps1` from this directory. The [demo checklist](docs/DEMO_CHECKLIST.md) covers startup order, expected results and recovery.
+
 ### Local chain and Sepolia
 
 Install Node.js 22 or 24 to use Hardhat. From `backend/`:
@@ -31,7 +33,7 @@ The helper starts or reuses a loopback-only Hardhat node and deploys the registr
 
 ### Optional Docker Compose
 
-Docker Compose v2.24 or newer can run the API with `docker compose up --build -d`, or the API and a development Hardhat node with `docker compose --profile chain up --build -d`. Wait for the registry deployment before running `docker compose exec api python -m scripts.seed`. Use `docker compose --profile chain down` to stop the services. Reports and deployment manifests use named volumes. Restarting the in-memory Hardhat node clears its chain history. The published host ports bind to loopback.
+Docker Compose v2.24 or newer can run the API with `docker compose up --build -d`, or the API and a development Hardhat node with `docker compose --profile chain up --build -d`. Wait for the registry deployment before running `docker compose exec api python -m scripts.seed`. Use `docker compose --profile chain down` to stop the services. Reports and deployment manifests use named volumes. Restarting the in-memory Hardhat node clears its chain history. Verify returns `not_found_on_chain` for a missing receipt. After redeploying the local registry, run `python -m scripts.reseed_chain_receipts` from the backend directory to restore local publications. The published host ports bind to loopback.
 
 ## Environment
 
@@ -65,7 +67,7 @@ All paths below start with `/api/v1`. POST endpoints have a ten-request-per-minu
 | POST | /scan/url | Persisted URL ScanReport |
 | POST | /scan/message | Persisted message ScanReport, including evidence from up to five distinct links |
 | GET | /reports | Filtered items and total; accepts risk, offset and limit |
-| GET | /reports/{id} | Stored report and current registry status when published |
+| GET | /reports/{id} | Stored report and saved receipt |
 | POST | /reports/{id}/publish | Publication receipt within the ScanReport |
 | GET | /reports/{id}/verify | Hash comparison and ordered event history |
 | GET | /intel/correlations | Deterministic clusters of two or more report IDs |

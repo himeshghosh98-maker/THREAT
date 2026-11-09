@@ -1,0 +1,38 @@
+{
+  "tune": {
+    "FPR": [
+      2,
+      31
+    ],
+    "FNR": [
+      17,
+      31
+    ],
+    "attack rejection": [
+      7,
+      7
+    ],
+    "inconclusive": [
+      2,
+      71
+    ]
+  },
+  "test": {
+    "FPR": [
+      0,
+      21
+    ],
+    "FNR": [
+      11,
+      21
+    ],
+    "attack rejection": [
+      5,
+      5
+    ],
+    "inconclusive": [
+      2,
+      49
+    ]
+  }
+}

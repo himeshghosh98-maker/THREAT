@@ -1,11 +1,10 @@
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 from hashlib import sha256
 from uuid import NAMESPACE_URL, uuid5
 
 from sqlalchemy.orm import Session
 
 from app.api.routes_scan import build_report
-from app.ai.explain import explain
 from app.analyzers.intel import NO_MATCH
 from app.analyzers.tls import DISCLAIMER
 from app.core.correlation import index_values
@@ -13,7 +12,7 @@ from app.core.config import Settings
 from app.core.db import insert_report, open_database
 from app.web3.registry import ChainUnavailable, publish
 from app.models.orm import ReportRow
-from app.models.schemas import IntelMatch, MessageInput, Redirect, ScanReport, SecurityHeader, TLS, UrlInput
+from app.models.schemas import IntelMatch, MessageInput, Redirect, SecurityHeader, TLS, UrlInput
 
 
 def enrich_fixture(report, suspicious):
@@ -41,8 +40,10 @@ def seed(db: Session):
         MessageInput(message="The public library opens at nine."),
         MessageInput(message="Pay a processing fee to receive your job offer."),
     ]
+    ids = []
     for index, sample in enumerate(samples):
         fixture_id = uuid5(NAMESPACE_URL, f"threat-intel:seed:{index}")
+        ids.append(str(fixture_id))
         observations = set()
         if index < 2:
             observations = {("redirect_target", "review.example"),
@@ -52,24 +53,26 @@ def seed(db: Session):
             index_values(db, fixture_id, observations)
             if row.receipt:
                 continue
-            report = ScanReport.model_validate(row.report)
-            if isinstance(sample, UrlInput) and not report.tls:
-                enrich_fixture(report, index < 2)
-            if isinstance(sample, MessageInput):
-                report = build_report(sample).model_copy(update={"id": report.id, "created_at": report.created_at})
-            report.ai_explanation = explain(report.risk, report.indicators)
-            row.classification = report.risk.classification
-            row.report = report.model_dump(mode="json")
-            continue
         report = build_report(sample)
+        # A fresh database produces the same synthetic report and chain digest.
+        report.created_at = datetime(2025, 1, 1, tzinfo=UTC) + timedelta(seconds=index)
+        if row:
+            report.created_at = row.created_at
+            if report.created_at.tzinfo is None:
+                report.created_at = report.created_at.replace(tzinfo=UTC)
         if isinstance(sample, UrlInput):
             enrich_fixture(report, index < 2)
         report.id = fixture_id
         if index < 2:
             report.redirect_chain = [Redirect(url="hxxps://review[.]example", status=302, domain="review.example")]
             report.limitations.append("The redirect is synthetic fixture data.")
-        insert_report(db, report, observations)
+        if row:
+            row.classification = report.risk.classification
+            row.report = report.model_dump(mode="json")
+        else:
+            insert_report(db, report, observations)
     db.commit()
+    return ids
 
 
 def main():
@@ -77,13 +80,17 @@ def main():
     engine = open_database(settings.database_url)
     try:
         with Session(engine) as db:
-            seed(db)
+            ids = seed(db)
             if settings.chain_mode == "local":
-                row = db.get(ReportRow, str(uuid5(NAMESPACE_URL, "threat-intel:seed:0")))
-                try:
-                    publish(db, row, settings)
-                except ChainUnavailable:
-                    pass
+                for index, fixture_id in enumerate(ids):
+                    row = db.get(ReportRow, fixture_id)
+                    if (row.receipt and row.receipt["onchain"]["network"] not in {"local", "local-stub"}
+                            or index != 0 and not row.receipt):
+                        continue
+                    try:
+                        publish(db, row, settings)
+                    except ChainUnavailable:
+                        break
     finally:
         engine.dispose()
 

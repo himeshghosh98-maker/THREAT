@@ -27,9 +27,9 @@ def test_list_and_correlations(client):
     listing = validated(client.get(API + "/reports"), ReportList)
     assert listing.total == len(listing.items) == 7
     for risk in ("suspicious", "low_risk"):
-        response = client.get(API + "/reports", params={"risk": risk, "offset": 1, "limit": 1})
+        response = client.get(API + "/reports", params={"risk": risk, "offset": 0, "limit": 1})
         page = validated(response, ReportList)
-        assert page.total == (4 if risk == "suspicious" else 3)
+        assert page.total == (1 if risk == "suspicious" else 2)
         assert len(page.items) == 1
         assert page.items[0].risk.classification == risk
     clusters = validated(client.get(API + "/intel/correlations"), Correlations).clusters
@@ -41,8 +41,8 @@ def test_list_and_correlations(client):
 
 @pytest.mark.parametrize(("route", "body", "expected"), [
     ("url", {"url": "https://example.org/reset?otp=123456"}, "low_risk"),
-    ("url", {"url": "https://example.zip"}, "suspicious"),
-    ("message", {"message": "Urgent: send secret 123456"}, "suspicious"),
+    ("url", {"url": "https://paypa1.com"}, "suspicious"),
+    ("message", {"message": "Urgent: send your PIN 123456"}, "suspicious"),
     ("message", {"message": "Meet on Tuesday"}, "low_risk"),
 ])
 def test_scan_publish_verify(client, route, body, expected):

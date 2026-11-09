@@ -55,7 +55,8 @@ def network(monkeypatch):
         if host == "crt.sh":
             return response(data=b"[]", headers={"content-type": "application/json"})
         if host == "raw.githubusercontent.com":
-            return response(data=b"https://listed.example/login", headers={"content-type": "text/plain"})
+            feed = b"https://listed.example/login" if "openphish" in request.url.path else b"https://other.example/feed"
+            return response(data=feed, headers={"content-type": "text/plain"})
         if host == "safebrowsing.googleapis.com":
             return response(data=b"{}", headers={"content-type": "application/json"})
 
@@ -106,6 +107,7 @@ def certificate(signing_key):
 @pytest.fixture(autouse=True)
 def tls_transport(monkeypatch, certificate):
     from app.analyzers import tls
+    tls._CT_CACHE.clear()
     async def handshake(address, port, host, verify):
         return [certificate(host)]
     monkeypatch.setattr(tls, "handshake", handshake)
@@ -125,14 +127,19 @@ def mock_registry(monkeypatch):
         def submit(self, digest, category):
             id = len(ledger)
             tx = "0x" + f"{id + 1:064x}"
-            ledger[id] = {"digest": digest, "status": "published", "category": category,
+            ledger[id] = {"submitted_hash": digest, "digest": digest, "status": "published", "category": category,
                           "history": [History(status="published", tx_hash=tx, timestamp=datetime.now(UTC))]}
             state = Onchain(status="published", report_hash=digest, tx_hash=tx, chain_report_id=id,
                             network="local", contract_address=self.address)
             return {"onchain": state.model_dump(mode="json"), "block": id + 1}
 
         def inspect(self, receipt, history):
+            if receipt["onchain"]["chain_report_id"] not in ledger:
+                raise registry.MissingReceipt()
             entry = ledger[receipt["onchain"]["chain_report_id"]]
+            if (entry["submitted_hash"] != receipt["onchain"]["report_hash"] or
+                    entry["history"][0].tx_hash != receipt["onchain"]["tx_hash"]):
+                raise registry.MissingReceipt()
             return entry["digest"], entry["status"], entry["history"] if history else []
 
     monkeypatch.setattr(registry, "Registry", MockRegistry)

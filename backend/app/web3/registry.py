@@ -5,6 +5,7 @@ from threading import Lock
 
 from sqlalchemy.orm import Session
 from web3 import Web3
+from web3.exceptions import ContractLogicError, TransactionNotFound
 from web3.logs import DISCARD
 
 from app.core.db import read_report
@@ -18,6 +19,10 @@ SUBMIT_LOCK = Lock()
 
 
 class ChainUnavailable(Exception):
+    pass
+
+
+class MissingReceipt(Exception):
     pass
 
 
@@ -38,7 +43,11 @@ class Registry:
         self.start = manifest.get("blockNumber", 0) if self.address == manifest.get("address") else 0
         endpoint = settings.local_rpc_url if local else settings.sepolia_rpc_url.get_secret_value()
         self.w3 = Web3(Web3.HTTPProvider(endpoint, request_kwargs={"timeout": 8}))
-        if self.w3.eth.chain_id != expected or not self.w3.eth.get_code(self.address):
+        if self.w3.eth.chain_id != expected:
+            raise ChainUnavailable()
+        if not self.w3.eth.get_code(self.address):
+            if address is not None:
+                raise MissingReceipt()
             raise ChainUnavailable()
         self.contract = self.w3.eth.contract(address=self.address, abi=abi)
 
@@ -105,23 +114,41 @@ class Registry:
         tip = self.w3.eth.block_number
         first = receipt["block"]
         # Bind the saved receipt to this chain incarnation, even across local node resets.
-        mined = self.w3.eth.get_transaction_receipt(state.tx_hash)
+        try:
+            mined = self.w3.eth.get_transaction_receipt(state.tx_hash)
+        except TransactionNotFound:
+            raise MissingReceipt() from None
         if mined.blockNumber != first or mined.to != self.address or mined.status != 1:
-            raise ChainUnavailable()
-        submitted, = self.contract.events.ReportSubmitted().process_receipt(mined, errors=DISCARD)
+            raise MissingReceipt()
+        events = self.contract.events.ReportSubmitted().process_receipt(mined, errors=DISCARD)
+        if len(events) != 1:
+            raise MissingReceipt()
+        submitted = events[0]
         if submitted.args.id != state.chain_report_id or Web3.to_hex(submitted.args.reportHash) != state.report_hash:
-            raise ChainUnavailable()
-        digest, status = self.get_onchain(state.chain_report_id, tip)
+            raise MissingReceipt()
+        try:
+            digest, status = self.get_onchain(state.chain_report_id, tip)
+        except ContractLogicError as exc:
+            if "invalid id" in str(exc):
+                raise MissingReceipt() from None
+            raise
         events = self.get_history(state.chain_report_id, first, tip) if history else []
         return digest, status, events
 
 
-def publish(db: Session, row, settings):
+def publish(db: Session, row, settings, *, local_registry=None):
     with SUBMIT_LOCK:
         db.refresh(row)
         report = read_report(row)
-        if report.onchain.status != "not_published":
-            return current_report(row, settings)
+        migrate_local = (local_registry and settings.chain_mode == report.onchain.network == "local"
+                         and report.onchain.contract_address != local_registry)
+        if report.onchain.status != "not_published" and not migrate_local:
+            try:
+                return observed(row, settings)[0]
+            except MissingReceipt:
+                if settings.chain_mode != "local" or report.onchain.network != "local":
+                    raise ChainUnavailable() from None
+                # Keep the previous receipt until the replacement transaction succeeds.
         try:
             registry = Registry(settings)
             receipt = registry.submit(report_hash(report), report.risk.classification)
@@ -136,25 +163,27 @@ def observed(row, settings, history=False):
     report = read_report(row)
     if report.onchain.status == "not_published":
         raise NotPublished()
+    if report.onchain.network != settings.chain_mode:
+        raise ChainUnavailable()
     try:
         registry = Registry(settings, report.onchain.contract_address)
         digest, status, events = registry.inspect(row.receipt, history)
+    except MissingReceipt:
+        raise
     except Exception:
         raise ChainUnavailable() from None
     report.onchain.status = status
     return report, digest, events
 
 
-def current_report(row, settings):
-    report = read_report(row)
-    if report.onchain.status == "not_published":
-        return report
-    return observed(row, settings)[0]
-
-
 def verify(row, settings):
-    report, digest, events = observed(row, settings, history=True)
+    try:
+        report, digest, events = observed(row, settings, history=True)
+        status = report.onchain.status
+    except MissingReceipt:
+        report = read_report(row)
+        digest, events, status = None, [], "not_found_on_chain"
     recomputed = report_hash(report)
     return VerifyResult(report_id=report.id, match=digest == recomputed, recomputed_hash=recomputed,
-                        onchain_hash=digest, status=report.onchain.status, network=report.onchain.network,
+                        onchain_hash=digest, status=status, network=report.onchain.network,
                         contract_address=report.onchain.contract_address, history=events, note=NOTE)

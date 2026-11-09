@@ -1,0 +1,842 @@
+[
+  {
+    "id": "benign_url-01",
+    "category": "benign_url",
+    "split": "test",
+    "input": "https://github.com/openai",
+    "expected": "low_risk"
+  },
+  {
+    "id": "benign_url-02",
+    "category": "benign_url",
+    "split": "test",
+    "input": "https://www.google.com/search?q=library",
+    "expected": "low_risk"
+  },
+  {
+    "id": "benign_url-03",
+    "category": "benign_url",
+    "split": "tune",
+    "input": "https://en.wikipedia.org/wiki/Physics",
+    "expected": "low_risk"
+  },
+  {
+    "id": "benign_url-04",
+    "category": "benign_url",
+    "split": "tune",
+    "input": "https://www.sbi.co.in",
+    "expected": "low_risk"
+  },
+  {
+    "id": "benign_url-05",
+    "category": "benign_url",
+    "split": "tune",
+    "input": "https://iitkgp.ac.in",
+    "expected": "low_risk"
+  },
+  {
+    "id": "benign_url-06",
+    "category": "benign_url",
+    "split": "test",
+    "input": "https://uidai.gov.in",
+    "expected": "low_risk"
+  },
+  {
+    "id": "benign_url-07",
+    "category": "benign_url",
+    "split": "test",
+    "input": "https://www.irctc.co.in",
+    "expected": "low_risk"
+  },
+  {
+    "id": "benign_url-08",
+    "category": "benign_url",
+    "split": "tune",
+    "input": "https://rbi.org.in",
+    "expected": "low_risk"
+  },
+  {
+    "id": "benign_url-09",
+    "category": "benign_url",
+    "split": "tune",
+    "input": "https://india.gov.in",
+    "expected": "low_risk"
+  },
+  {
+    "id": "benign_url-10",
+    "category": "benign_url",
+    "split": "tune",
+    "input": "https://www.ox.ac.uk/admissions",
+    "expected": "low_risk"
+  },
+  {
+    "id": "benign_url-11",
+    "category": "benign_url",
+    "split": "test",
+    "input": "https://www.canarabank.com",
+    "expected": "low_risk"
+  },
+  {
+    "id": "benign_url-12",
+    "category": "benign_url",
+    "split": "tune",
+    "input": "https://www.axisbank.com",
+    "expected": "low_risk"
+  },
+  {
+    "id": "benign_url-13",
+    "category": "benign_url",
+    "split": "tune",
+    "input": "https://www.hdfcbank.com",
+    "expected": "low_risk"
+  },
+  {
+    "id": "benign_url-14",
+    "category": "benign_url",
+    "split": "test",
+    "input": "https://www.icicibank.com",
+    "expected": "low_risk"
+  },
+  {
+    "id": "benign_url-15",
+    "category": "benign_url",
+    "split": "tune",
+    "input": "https://www.npci.org.in",
+    "expected": "low_risk"
+  },
+  {
+    "id": "benign_url-16",
+    "category": "benign_url",
+    "split": "test",
+    "input": "https://openlibrary.org/books",
+    "expected": "low_risk"
+  },
+  {
+    "id": "benign_url-17",
+    "category": "benign_url",
+    "split": "tune",
+    "input": "https://docs.python.org/3/library/urllib.parse.html",
+    "expected": "low_risk"
+  },
+  {
+    "id": "benign_url-18",
+    "category": "benign_url",
+    "split": "tune",
+    "input": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/from",
+    "expected": "low_risk"
+  },
+  {
+    "id": "benign_url-19",
+    "category": "benign_url",
+    "split": "test",
+    "input": "https://smallpress.org/catalog",
+    "expected": "low_risk"
+  },
+  {
+    "id": "benign_url-20",
+    "category": "benign_url",
+    "split": "tune",
+    "input": "https://artisans.in/contact",
+    "expected": "low_risk"
+  },
+  {
+    "id": "benign_url-21",
+    "category": "benign_url",
+    "split": "test",
+    "input": "https://citygarden.net",
+    "expected": "low_risk"
+  },
+  {
+    "id": "benign_url-22",
+    "category": "benign_url",
+    "split": "tune",
+    "input": "https://northfield-school.org",
+    "expected": "low_risk"
+  },
+  {
+    "id": "benign_url-23",
+    "category": "benign_url",
+    "split": "tune",
+    "input": "https://faculty.iitb.ac.in",
+    "expected": "low_risk"
+  },
+  {
+    "id": "benign_url-24",
+    "category": "benign_url",
+    "split": "test",
+    "input": "https://museum-notes.github.io/archive",
+    "expected": "low_risk"
+  },
+  {
+    "id": "benign_url-25",
+    "category": "benign_url",
+    "split": "tune",
+    "input": "https://reading-group.pages.dev",
+    "expected": "low_risk"
+  },
+  {
+    "id": "benign_url-26",
+    "category": "benign_url",
+    "split": "test",
+    "input": "https://garden-club.vercel.app",
+    "expected": "low_risk"
+  },
+  {
+    "id": "benign_url-27",
+    "category": "benign_url",
+    "split": "tune",
+    "input": "https://my-recipes.blogspot.com",
+    "expected": "low_risk"
+  },
+  {
+    "id": "benign_url-28",
+    "category": "benign_url",
+    "split": "test",
+    "input": "https://community-news.wordpress.com",
+    "expected": "low_risk"
+  },
+  {
+    "id": "benign_url-29",
+    "category": "benign_url",
+    "split": "tune",
+    "input": "https://google.de/maps",
+    "expected": "low_risk"
+  },
+  {
+    "id": "benign_url-30",
+    "category": "benign_url",
+    "split": "tune",
+    "input": "https://www.amazon.ca/books",
+    "expected": "low_risk"
+  },
+  {
+    "id": "phishing_url-01",
+    "category": "phishing_url",
+    "split": "test",
+    "input": "https://paypa1.com",
+    "expected": "positive"
+  },
+  {
+    "id": "phishing_url-02",
+    "category": "phishing_url",
+    "split": "test",
+    "input": "https://g00gle-login.com",
+    "expected": "positive"
+  },
+  {
+    "id": "phishing_url-03",
+    "category": "phishing_url",
+    "split": "tune",
+    "input": "https://sbi-secure-login.xyz",
+    "expected": "positive"
+  },
+  {
+    "id": "phishing_url-04",
+    "category": "phishing_url",
+    "split": "tune",
+    "input": "https://xn--pypal-4ve.com",
+    "expected": "positive"
+  },
+  {
+    "id": "phishing_url-05",
+    "category": "phishing_url",
+    "split": "tune",
+    "input": "https://micros0ft-verify.net",
+    "expected": "positive"
+  },
+  {
+    "id": "phishing_url-06",
+    "category": "phishing_url",
+    "split": "test",
+    "input": "https://facebo0k-login.xyz",
+    "expected": "positive"
+  },
+  {
+    "id": "phishing_url-07",
+    "category": "phishing_url",
+    "split": "test",
+    "input": "https://applle-support.com",
+    "expected": "positive"
+  },
+  {
+    "id": "phishing_url-08",
+    "category": "phishing_url",
+    "split": "tune",
+    "input": "https://paytm-kyc-update.net",
+    "expected": "positive"
+  },
+  {
+    "id": "phishing_url-09",
+    "category": "phishing_url",
+    "split": "tune",
+    "input": "https://phonepe-refund.xyz",
+    "expected": "positive"
+  },
+  {
+    "id": "phishing_url-10",
+    "category": "phishing_url",
+    "split": "tune",
+    "input": "https://kotaksecurelogin.net",
+    "expected": "positive"
+  },
+  {
+    "id": "phishing_url-11",
+    "category": "phishing_url",
+    "split": "test",
+    "input": "https://pnb-verify-account.top",
+    "expected": "positive"
+  },
+  {
+    "id": "phishing_url-12",
+    "category": "phishing_url",
+    "split": "tune",
+    "input": "https://canara-kyc.online",
+    "expected": "positive"
+  },
+  {
+    "id": "phishing_url-13",
+    "category": "phishing_url",
+    "split": "tune",
+    "input": "https://amazon.checkout-notice.net",
+    "expected": "positive"
+  },
+  {
+    "id": "phishing_url-14",
+    "category": "phishing_url",
+    "split": "test",
+    "input": "https://paypal.signin.portal-review.net",
+    "expected": "positive"
+  },
+  {
+    "id": "phishing_url-15",
+    "category": "phishing_url",
+    "split": "tune",
+    "input": "https://sbi.account-service.net",
+    "expected": "positive"
+  },
+  {
+    "id": "phishing_url-16",
+    "category": "phishing_url",
+    "split": "test",
+    "input": "https://client-center.net/hdfc/verify",
+    "expected": "positive"
+  },
+  {
+    "id": "phishing_url-17",
+    "category": "phishing_url",
+    "split": "tune",
+    "input": "https://document-review.net/uidai/kyc",
+    "expected": "positive"
+  },
+  {
+    "id": "phishing_url-18",
+    "category": "phishing_url",
+    "split": "tune",
+    "input": "https://8.8.4.4/secure/login",
+    "expected": "positive"
+  },
+  {
+    "id": "phishing_url-19",
+    "category": "phishing_url",
+    "split": "test",
+    "input": "https://paypal.com@account-review.net/login",
+    "expected": "positive"
+  },
+  {
+    "id": "phishing_url-20",
+    "category": "phishing_url",
+    "split": "tune",
+    "input": "https://billing-center.org/?next=https://collector.net/login",
+    "expected": "positive"
+  },
+  {
+    "id": "phishing_url-21",
+    "category": "phishing_url",
+    "split": "test",
+    "input": "https://account---secure---verify.xyz",
+    "expected": "positive"
+  },
+  {
+    "id": "phishing_url-22",
+    "category": "phishing_url",
+    "split": "tune",
+    "input": "https://random-reward.top",
+    "expected": "positive"
+  },
+  {
+    "id": "phishing_url-23",
+    "category": "phishing_url",
+    "split": "tune",
+    "input": "https://kbc-winner.net/prize",
+    "expected": "positive"
+  },
+  {
+    "id": "phishing_url-24",
+    "category": "phishing_url",
+    "split": "test",
+    "input": "https://airtel-sim-update.xyz",
+    "expected": "positive"
+  },
+  {
+    "id": "phishing_url-25",
+    "category": "phishing_url",
+    "split": "tune",
+    "input": "https://epfo-support-verify.net",
+    "expected": "positive"
+  },
+  {
+    "id": "phishing_url-26",
+    "category": "phishing_url",
+    "split": "test",
+    "input": "https://flipkartrefund.net",
+    "expected": "positive"
+  },
+  {
+    "id": "phishing_url-27",
+    "category": "phishing_url",
+    "split": "tune",
+    "input": "https://hdfc-login-check.org",
+    "expected": "positive"
+  },
+  {
+    "id": "phishing_url-28",
+    "category": "phishing_url",
+    "split": "test",
+    "input": "https://xn--pple-43d.com/login",
+    "expected": "positive"
+  },
+  {
+    "id": "phishing_url-29",
+    "category": "phishing_url",
+    "split": "tune",
+    "input": "https://listed-sample.net/offer",
+    "expected": "positive"
+  },
+  {
+    "id": "phishing_url-30",
+    "category": "phishing_url",
+    "split": "tune",
+    "input": "https://bnk-customer-service.info",
+    "expected": "positive"
+  },
+  {
+    "id": "attack-01",
+    "category": "attack",
+    "split": "tune",
+    "input": "http://127.0.0.1",
+    "expected": "rejected"
+  },
+  {
+    "id": "attack-02",
+    "category": "attack",
+    "split": "test",
+    "input": "http://localhost",
+    "expected": "rejected"
+  },
+  {
+    "id": "attack-03",
+    "category": "attack",
+    "split": "test",
+    "input": "http://169.254.169.254/latest/meta-data",
+    "expected": "rejected"
+  },
+  {
+    "id": "attack-04",
+    "category": "attack",
+    "split": "tune",
+    "input": "http://[::1]",
+    "expected": "rejected"
+  },
+  {
+    "id": "attack-05",
+    "category": "attack",
+    "split": "tune",
+    "input": "http://10.0.0.1",
+    "expected": "rejected"
+  },
+  {
+    "id": "attack-06",
+    "category": "attack",
+    "split": "tune",
+    "input": "http://192.168.1.2",
+    "expected": "rejected"
+  },
+  {
+    "id": "attack-07",
+    "category": "attack",
+    "split": "tune",
+    "input": "ftp://public.example/file",
+    "expected": "rejected"
+  },
+  {
+    "id": "attack-08",
+    "category": "attack",
+    "split": "test",
+    "input": "http://[::ffff:8.8.8.8]",
+    "expected": "rejected"
+  },
+  {
+    "id": "attack-09",
+    "category": "attack",
+    "split": "test",
+    "input": "http://2130706433",
+    "expected": "rejected"
+  },
+  {
+    "id": "attack-10",
+    "category": "attack",
+    "split": "tune",
+    "input": "http://168.63.129.16",
+    "expected": "rejected"
+  },
+  {
+    "id": "attack-11",
+    "category": "attack",
+    "split": "test",
+    "input": "http://example.org:25",
+    "expected": "rejected"
+  },
+  {
+    "id": "attack-12",
+    "category": "attack",
+    "split": "tune",
+    "input": "http://user:fake@example.org",
+    "expected": "rejected"
+  },
+  {
+    "id": "unreachable-01",
+    "category": "unreachable",
+    "split": "tune",
+    "input": "https://zzqx-demo-12345.invalid",
+    "expected": "inconclusive"
+  },
+  {
+    "id": "unreachable-02",
+    "category": "unreachable",
+    "split": "test",
+    "input": "https://no-public-record.invalid",
+    "expected": "inconclusive"
+  },
+  {
+    "id": "unreachable-03",
+    "category": "unreachable",
+    "split": "test",
+    "input": "https://unreachable-sample.invalid",
+    "expected": "inconclusive"
+  },
+  {
+    "id": "unreachable-04",
+    "category": "unreachable",
+    "split": "tune",
+    "input": "https://nxdomain-lab.invalid",
+    "expected": "inconclusive"
+  },
+  {
+    "id": "scam-01",
+    "category": "scam",
+    "split": "tune",
+    "input": "Pay a processing fee to receive your job offer",
+    "expected": "positive"
+  },
+  {
+    "id": "scam-02",
+    "category": "scam",
+    "split": "tune",
+    "input": "SBI KYC expired. Update immediately at www . customer-check . xyz",
+    "expected": "positive"
+  },
+  {
+    "id": "scam-03",
+    "category": "scam",
+    "split": "tune",
+    "input": "Apna OTP batayein warna card band ho jayega",
+    "expected": "positive"
+  },
+  {
+    "id": "scam-04",
+    "category": "scam",
+    "split": "tune",
+    "input": "Apnar OTP bolun ekhoni",
+    "expected": "positive"
+  },
+  {
+    "id": "scam-05",
+    "category": "scam",
+    "split": "test",
+    "input": "Refund pete age taka pathan",
+    "expected": "positive"
+  },
+  {
+    "id": "scam-06",
+    "category": "scam",
+    "split": "test",
+    "input": "KBC lottery jitechen taka pathan",
+    "expected": "positive"
+  },
+  {
+    "id": "scam-07",
+    "category": "scam",
+    "split": "tune",
+    "input": "Your electricity will be disconnected tonight. Pay now",
+    "expected": "positive"
+  },
+  {
+    "id": "scam-08",
+    "category": "scam",
+    "split": "tune",
+    "input": "SIM band ho jayega recharge karein",
+    "expected": "positive"
+  },
+  {
+    "id": "scam-09",
+    "category": "scam",
+    "split": "tune",
+    "input": "Approve UPI collect request to receive refund",
+    "expected": "positive"
+  },
+  {
+    "id": "scam-10",
+    "category": "scam",
+    "split": "tune",
+    "input": "Submit your passport for this job offer",
+    "expected": "positive"
+  },
+  {
+    "id": "scam-11",
+    "category": "scam",
+    "split": "tune",
+    "input": "Registration fee jama karo naukri ke liye",
+    "expected": "positive"
+  },
+  {
+    "id": "scam-12",
+    "category": "scam",
+    "split": "tune",
+    "input": "PAN update karein nahin to account band",
+    "expected": "positive"
+  },
+  {
+    "id": "scam-13",
+    "category": "scam",
+    "split": "test",
+    "input": "Aadhaar verify now at id-update.xyz",
+    "expected": "positive"
+  },
+  {
+    "id": "scam-14",
+    "category": "scam",
+    "split": "tune",
+    "input": "FASTag has expired. Pay fine at toll-refund.xyz",
+    "expected": "positive"
+  },
+  {
+    "id": "scam-15",
+    "category": "scam",
+    "split": "test",
+    "input": "Challan pending pay now at traffic-review.xyz",
+    "expected": "positive"
+  },
+  {
+    "id": "scam-16",
+    "category": "scam",
+    "split": "test",
+    "input": "Parcel customs fee due; pay to release your package",
+    "expected": "positive"
+  },
+  {
+    "id": "scam-17",
+    "category": "scam",
+    "split": "tune",
+    "input": "Customer care number par call karein refund ke liye",
+    "expected": "positive"
+  },
+  {
+    "id": "scam-18",
+    "category": "scam",
+    "split": "test",
+    "input": "SBI: account block hoga KYC update karo",
+    "expected": "positive"
+  },
+  {
+    "id": "scam-19",
+    "category": "scam",
+    "split": "test",
+    "input": "Claim your lottery prize now",
+    "expected": "positive"
+  },
+  {
+    "id": "scam-20",
+    "category": "scam",
+    "split": "test",
+    "input": "Provide your CVV for account verification",
+    "expected": "positive"
+  },
+  {
+    "id": "scam-21",
+    "category": "scam",
+    "split": "tune",
+    "input": "Apnar KYC update korun nahole account bondho",
+    "expected": "positive"
+  },
+  {
+    "id": "scam-22",
+    "category": "scam",
+    "split": "test",
+    "input": "Send money to receive your cash reward",
+    "expected": "positive"
+  },
+  {
+    "id": "benign_message-01",
+    "category": "benign_message",
+    "split": "tune",
+    "input": "Are you free for lunch on Saturday?",
+    "expected": "low_risk"
+  },
+  {
+    "id": "benign_message-02",
+    "category": "benign_message",
+    "split": "tune",
+    "input": "Urgent, call me when you can",
+    "expected": "low_risk"
+  },
+  {
+    "id": "benign_message-03",
+    "category": "benign_message",
+    "split": "tune",
+    "input": "SBI: your monthly statement is available",
+    "expected": "low_risk"
+  },
+  {
+    "id": "benign_message-04",
+    "category": "benign_message",
+    "split": "tune",
+    "input": "Library hours are 9 to 5",
+    "expected": "low_risk"
+  },
+  {
+    "id": "benign_message-05",
+    "category": "benign_message",
+    "split": "test",
+    "input": "Receipt: your processing fee was paid yesterday",
+    "expected": "low_risk"
+  },
+  {
+    "id": "benign_message-06",
+    "category": "benign_message",
+    "split": "test",
+    "input": "Please never share your OTP",
+    "expected": "low_risk"
+  },
+  {
+    "id": "benign_message-07",
+    "category": "benign_message",
+    "split": "tune",
+    "input": "Weekly newsletter from GitHub",
+    "expected": "low_risk"
+  },
+  {
+    "id": "benign_message-08",
+    "category": "benign_message",
+    "split": "tune",
+    "input": "Calendar invite for our group meeting",
+    "expected": "low_risk"
+  },
+  {
+    "id": "benign_message-09",
+    "category": "benign_message",
+    "split": "tune",
+    "input": "Aaj shaam chai piyenge?",
+    "expected": "low_risk"
+  },
+  {
+    "id": "benign_message-10",
+    "category": "benign_message",
+    "split": "tune",
+    "input": "Kal boi mela jabo?",
+    "expected": "low_risk"
+  },
+  {
+    "id": "benign_message-11",
+    "category": "benign_message",
+    "split": "tune",
+    "input": "Your FASTag balance was updated",
+    "expected": "low_risk"
+  },
+  {
+    "id": "benign_message-12",
+    "category": "benign_message",
+    "split": "tune",
+    "input": "PAN card arrived in the mail",
+    "expected": "low_risk"
+  },
+  {
+    "id": "benign_message-13",
+    "category": "benign_message",
+    "split": "test",
+    "input": "My electricity bill was paid today",
+    "expected": "low_risk"
+  },
+  {
+    "id": "benign_message-14",
+    "category": "benign_message",
+    "split": "tune",
+    "input": "Parcel delivered successfully",
+    "expected": "low_risk"
+  },
+  {
+    "id": "benign_message-15",
+    "category": "benign_message",
+    "split": "test",
+    "input": "The KBC quiz is on television tonight",
+    "expected": "low_risk"
+  },
+  {
+    "id": "benign_message-16",
+    "category": "benign_message",
+    "split": "test",
+    "input": "The job fair opens on Monday",
+    "expected": "low_risk"
+  },
+  {
+    "id": "benign_message-17",
+    "category": "benign_message",
+    "split": "tune",
+    "input": "Refund credited to your account",
+    "expected": "low_risk"
+  },
+  {
+    "id": "benign_message-18",
+    "category": "benign_message",
+    "split": "test",
+    "input": "UPI payments workshop on campus tomorrow",
+    "expected": "low_risk"
+  },
+  {
+    "id": "benign_message-19",
+    "category": "benign_message",
+    "split": "test",
+    "input": "Apna lunch le aana",
+    "expected": "low_risk"
+  },
+  {
+    "id": "benign_message-20",
+    "category": "benign_message",
+    "split": "test",
+    "input": "Bondhu kal dekha hobe",
+    "expected": "low_risk"
+  },
+  {
+    "id": "benign_message-21",
+    "category": "benign_message",
+    "split": "tune",
+    "input": "Newsletter at www . university . edu/events",
+    "expected": "low_risk"
+  },
+  {
+    "id": "benign_message-22",
+    "category": "benign_message",
+    "split": "test",
+    "input": "Customer care hours are listed in the app",
+    "expected": "low_risk"
+  }
+]

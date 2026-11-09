@@ -1,4 +1,7 @@
 import asyncio
+from collections import OrderedDict
+from time import monotonic
+from threading import Lock
 import ipaddress
 import json
 import socket
@@ -58,14 +61,18 @@ async def handshake(address, port, host, verify):
 async def peer_chain(url, resolution=None):
     url = ssrf.validate_url(url)
     host = url.host.strip("[]").rstrip(".")
-    async with asyncio.timeout(8):
+    async with asyncio.timeout(20):
         addresses = await asyncio.shield(resolution) if resolution is not None else await ssrf.safe_resolve(host)
-        address = ssrf.public_ip(str(addresses[0]))
-        try:
-            return await handshake(address, url.port, host, True), True
-        except ssl.SSLCertVerificationError:
-            # Inspection only. Retry the same pinned IP and send no application data.
-            return await handshake(address, url.port, host, False), False
+
+        async def connect(address):
+            try:
+                return await handshake(address, url.port, host, True), True
+            except ssl.SSLCertVerificationError:
+                # Inspect the same validated peer without sending application data.
+                return await handshake(address, url.port, host, False), False
+
+        _, result = await ssrf.try_addresses(addresses, connect)
+        return result
 
 
 def matches_dns(host, pattern):
@@ -153,14 +160,43 @@ async def analyze(url, resolution=None, observations=None):
     return inspect(url.host.strip("[]").rstrip("."), certs, trusted)
 
 
+CT_TTL = 24 * 3600
+_CT_CACHE = OrderedDict()
+_CT_LOCK = Lock()
+
+
 async def transparency(host):
+    key = host.lower().rstrip(".")
+    with _CT_LOCK:
+        cached = _CT_CACHE.get(key)
+        if cached and monotonic() - cached[0] < CT_TTL:
+            _CT_CACHE.move_to_end(key)
+            return cached[1]
+    async with asyncio.timeout(20):
+        for attempt in range(2):
+            try:
+                result = await ct_lookup(key)
+            except (ssrf.FetchFailure, ValueError, KeyError, TypeError):
+                if attempt:
+                    raise
+            else:
+                break
+    with _CT_LOCK:
+        _CT_CACHE[key] = (monotonic(), result)
+        if len(_CT_CACHE) > 2048:
+            _CT_CACHE.popitem(last=False)
+    return result
+
+
+async def ct_lookup(host):
     query = urlencode({"q": host, "output": "json"})
-    result = await ssrf.safe_fetch(f"https://crt.sh/?{query}", timeout=8)
+    result = await ssrf.safe_fetch(f"https://crt.sh/?{query}", timeout=10)
     if result.failed or not result.chain or result.chain[-1].status != 200:
-        raise ValueError("Certificate transparency unavailable")
+        status = result.chain[-1].status if result.chain else None
+        raise ssrf.FetchFailure("Certificate transparency: " + (result.failure_reason or f"HTTP {status}"))
     records = json.loads(result.body)
     if not isinstance(records, list):
-        raise ValueError("Unexpected CT response")
+        raise ssrf.FetchFailure("Unexpected CT response")
     unique = {}
     for row in records:
         issued = datetime.fromisoformat(row["not_before"])
