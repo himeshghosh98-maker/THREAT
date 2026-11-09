@@ -2,9 +2,7 @@
 
 import * as React from "react";
 import {
-  Upload,
   Camera,
-  X,
   AlertCircle,
   AlertTriangle,
   CheckCircle2,
@@ -19,9 +17,10 @@ import {
   Sparkles
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ImageIntake, processImageFile } from "@/components/ImageIntake";
+import { decodeQrFromImageSrc, defangText } from "@/lib/qr";
 
 const MAX_FILE_SIZE = 8 * 1024 * 1024; // 8 MB
-const ALLOWED_MIME_TYPES = ["image/png", "image/jpeg", "image/webp"];
 const MAX_MESSAGE_LENGTH = 5000;
 const OCR_TIMEOUT_MS = 60000; // 60s timeout
 const AMBIGUOUS_CHARS = ["l", "1", "I", "0", "O", "rn", "m", "vv", "w"];
@@ -81,58 +80,6 @@ export function isOnlyUrl(text: string): boolean {
   }
 }
 
-function processImageFile(
-  file: File
-): Promise<{ dataUrl: string; width: number; height: number; downscaled: boolean }> {
-  return new Promise((resolve, reject) => {
-    const objectUrl = URL.createObjectURL(file);
-    const img = new Image();
-
-    img.onload = () => {
-      URL.revokeObjectURL(objectUrl);
-      const { naturalWidth: width, naturalHeight: height } = img;
-
-      if (width === 0 || height === 0) {
-        reject(new Error("Image has invalid or corrupt dimensions (0x0)."));
-        return;
-      }
-
-      // Downscale very large images before OCR to prevent UI freezing
-      const MAX_DIM = 2200;
-      let targetW = width;
-      let targetH = height;
-      let downscaled = false;
-
-      if (width > MAX_DIM || height > MAX_DIM) {
-        const ratio = Math.min(MAX_DIM / width, MAX_DIM / height);
-        targetW = Math.round(width * ratio);
-        targetH = Math.round(height * ratio);
-        downscaled = true;
-      }
-
-      const canvas = document.createElement("canvas");
-      canvas.width = targetW;
-      canvas.height = targetH;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) {
-        reject(new Error("Failed to create canvas context for image processing."));
-        return;
-      }
-
-      ctx.drawImage(img, 0, 0, targetW, targetH);
-      const dataUrl = canvas.toDataURL("image/png");
-      resolve({ dataUrl, width: targetW, height: targetH, downscaled });
-    };
-
-    img.onerror = () => {
-      URL.revokeObjectURL(objectUrl);
-      reject(new Error("Corrupt or invalid image file. Could not read image dimensions."));
-    };
-
-    img.src = objectUrl;
-  });
-}
-
 interface ScreenshotScannerProps {
   onAnalyzeUrl: (url: string) => void;
   onAnalyzeMessage: (message: string) => void;
@@ -164,13 +111,9 @@ export function ScreenshotScanner({
   const [hasExtracted, setHasExtracted] = React.useState(false);
   const [isLoadingExample, setIsLoadingExample] = React.useState(false);
 
-  // Drag state
-  const [isDragging, setIsDragging] = React.useState(false);
-
   // Worker ref for cancellation
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const activeWorkerRef = React.useRef<any>(null);
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   // Cleanup worker on unmount
   React.useEffect(() => {
@@ -181,61 +124,6 @@ export function ScreenshotScanner({
       }
     };
   }, []);
-
-  const handleFileSelect = React.useCallback(async (file: File) => {
-    setValidationError(null);
-    setNoTextDetected(false);
-    setHasExtracted(false);
-    setReviewedText("");
-    setOcrConfidence(null);
-    setLowConfidenceWords([]);
-
-    // Validate MIME type
-    if (!ALLOWED_MIME_TYPES.includes(file.type)) {
-      setValidationError("Unsupported file format. Please upload a PNG, JPG, or WEBP image.");
-      return;
-    }
-
-    // Validate size (max 8 MB)
-    if (file.size > MAX_FILE_SIZE) {
-      setValidationError("File size exceeds the 8 MB maximum limit. Please select a smaller screenshot.");
-      return;
-    }
-
-    // Process image & dimensions via Image object
-    try {
-      const { dataUrl, width, height, downscaled } = await processImageFile(file);
-      setSelectedFile(file);
-      setImagePreview(dataUrl);
-      setImageDimensions({ width, height });
-      setIsDownscaled(downscaled);
-    } catch (err) {
-      setValidationError(err instanceof Error ? err.message : "Failed to load and validate image.");
-    }
-  }, []);
-
-  // Paste handler for Ctrl+V
-  React.useEffect(() => {
-    const handlePaste = (e: ClipboardEvent) => {
-      if (isScanning || isOcrRunning) return;
-      if (!e.clipboardData) return;
-
-      const items = e.clipboardData.items;
-      for (let i = 0; i < items.length; i++) {
-        if (items[i].type.startsWith("image/")) {
-          const file = items[i].getAsFile();
-          if (file) {
-            e.preventDefault();
-            handleFileSelect(file);
-            break;
-          }
-        }
-      }
-    };
-
-    window.addEventListener("paste", handlePaste);
-    return () => window.removeEventListener("paste", handlePaste);
-  }, [isScanning, isOcrRunning, handleFileSelect]);
 
   const resetAll = () => {
     if (activeWorkerRef.current) {
@@ -255,33 +143,23 @@ export function ScreenshotScanner({
     setNoTextDetected(false);
     setReviewedText("");
     setHasExtracted(false);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    if (!isScanning && !isOcrRunning) {
-      setIsDragging(true);
-    }
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    if (isScanning || isOcrRunning) return;
-
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      const file = e.dataTransfer.files[0];
-      handleFileSelect(file);
-    }
-  };
+  const handleFileLoaded = React.useCallback(
+    (data: { file: File; dataUrl: string; width: number; height: number; downscaled: boolean }) => {
+      setValidationError(null);
+      setNoTextDetected(false);
+      setHasExtracted(false);
+      setReviewedText("");
+      setOcrConfidence(null);
+      setLowConfidenceWords([]);
+      setSelectedFile(data.file);
+      setImagePreview(data.dataUrl);
+      setImageDimensions({ width: data.width, height: data.height });
+      setIsDownscaled(data.downscaled);
+    },
+    []
+  );
 
   const handleRunOcr = async () => {
     if (!imagePreview) return;
@@ -363,17 +241,34 @@ export function ScreenshotScanner({
       // Filter words with confidence < 80
       const lowConf = wordList.filter((w) => w.confidence < 80 && w.text.length > 1);
 
+      // TIE-IN WITH QR CODE SCAN: Also try jsqr on the screenshot
+      let qrDecodedText: string | null = null;
+      try {
+        const qrRes = await decodeQrFromImageSrc(imagePreview);
+        if (qrRes && qrRes.data) {
+          qrDecodedText = qrRes.data;
+        }
+      } catch {
+        // Fallback silently if QR decode fails
+      }
+
+      let finalText = rawText;
+      if (qrDecodedText) {
+        const qrNote = `Link decoded from a QR code in the image: ${defangText(qrDecodedText)}`;
+        finalText = rawText ? `${rawText}\n\n${qrNote}` : qrNote;
+      }
+
       setOcrConfidence(confidence);
       setLowConfidenceWords(lowConf);
       setIsOcrRunning(false);
       setHasExtracted(true);
 
-      if (!rawText) {
+      if (!finalText) {
         setNoTextDetected(true);
         setReviewedText("");
       } else {
         setNoTextDetected(false);
-        setReviewedText(rawText);
+        setReviewedText(finalText);
       }
     } catch (err) {
       if (timeoutId) clearTimeout(timeoutId);
@@ -408,7 +303,8 @@ export function ScreenshotScanner({
       if (!res.ok) throw new Error("Could not load bundled sample screenshot.");
       const blob = await res.blob();
       const file = new File([blob], "sample-kyc-sms.png", { type: "image/png" });
-      await handleFileSelect(file);
+      const { dataUrl, width, height, downscaled } = await processImageFile(file);
+      handleFileLoaded({ file, dataUrl, width, height, downscaled });
     } catch {
       setValidationError("Failed to load sample screenshot. You can upload any PNG, JPG, or WEBP image.");
     } finally {
@@ -458,174 +354,86 @@ export function ScreenshotScanner({
 
   return (
     <div className="space-y-6">
-      {/* 1. Image Upload & Dropzone Area */}
-      {!imagePreview ? (
-        <div
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          className={`relative border-2 border-dashed rounded-3xl p-8 sm:p-10 text-center transition-all ${
-            isDragging
-              ? "border-[#4F6BFF] bg-[#F0F4FF]/90 shadow-md"
-              : "border-[#D6E2FF] bg-white/70 hover:border-[#4F6BFF]/60 hover:bg-white/90"
-          }`}
-        >
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/png,image/jpeg,image/webp"
-            onChange={(e) => {
-              if (e.target.files && e.target.files[0]) {
-                handleFileSelect(e.target.files[0]);
-              }
-            }}
-            disabled={isScanning || isOcrRunning}
-            className="sr-only"
-            id="screenshot-file-input"
-            aria-label="Upload screenshot file"
-          />
-
-          <div className="max-w-md mx-auto space-y-4">
-            <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-[#4F6BFF]/15 to-[#5BC8FF]/20 flex items-center justify-center text-[#4F6BFF] shadow-xs">
-              <Camera className="w-7 h-7" />
-            </div>
-
-            <div className="space-y-1">
-              <h3 className="text-base font-bold text-[#0F1E4A]">
-                Upload or Paste Screenshot
-              </h3>
-              <p className="text-xs text-[#526085]">
-                Drag and drop image here, paste with{" "}
-                <kbd className="px-1.5 py-0.5 rounded bg-white border border-[#D6E2FF] font-mono text-[11px] text-[#0F1E4A] font-semibold">
-                  Ctrl+V
-                </kbd>
-                , or browse files.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-              <label
-                htmlFor="screenshot-file-input"
-                className="btn-pill-gradient inline-flex items-center gap-2 px-6 py-2.5 text-xs sm:text-sm font-semibold text-white rounded-full cursor-pointer shadow-sm hover:shadow"
-              >
-                <Upload className="w-4 h-4" />
-                <span>Select Screenshot</span>
-              </label>
-
-              <button
-                type="button"
-                onClick={handleTryExample}
-                disabled={isLoadingExample || isScanning}
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-white hover:bg-[#F0F4FF] text-[#4F6BFF] border border-[#D6E2FF] text-xs font-semibold shadow-xs hover:shadow-sm transition-all cursor-pointer disabled:opacity-60"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-[#5BC8FF]" />
-                <span>{isLoadingExample ? "Loading sample..." : "Try an example screenshot"}</span>
-              </button>
-            </div>
-
-            <p className="text-[11px] text-[#8896B8]">
-              Supports PNG, JPG, or WEBP (Max 8 MB). Processed strictly on-device.
-            </p>
+      {/* 1. Shared Image Intake & Preview Area */}
+      <ImageIntake
+        id="screenshot-file-input"
+        maxFileSizeBytes={MAX_FILE_SIZE}
+        maxSizeLabel="8 MB"
+        title="Upload or Paste Screenshot"
+        description="Drag and drop image here, paste with Ctrl+V, or browse files."
+        buttonText="Select Screenshot"
+        icon={<Camera className="w-7 h-7" />}
+        selectedFile={selectedFile}
+        imagePreview={imagePreview}
+        imageDimensions={imageDimensions}
+        isDownscaled={isDownscaled}
+        disabled={isScanning || isOcrRunning}
+        onFileLoaded={handleFileLoaded}
+        onRemove={resetAll}
+        onError={(err) => setValidationError(err)}
+        altText="Selected screenshot preview"
+        actionButtons={
+          <button
+            type="button"
+            onClick={handleTryExample}
+            disabled={isLoadingExample || isScanning}
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-white hover:bg-[#F0F4FF] text-[#4F6BFF] border border-[#D6E2FF] text-xs font-semibold shadow-xs hover:shadow-sm transition-all cursor-pointer disabled:opacity-60"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-[#5BC8FF]" />
+            <span>{isLoadingExample ? "Loading sample..." : "Try an example screenshot"}</span>
+          </button>
+        }
+      >
+        {/* OCR Action or Progress inside preview card */}
+        {!hasExtracted && !isOcrRunning && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+            <span className="text-xs text-[#526085]">
+              Ready to read text. OCR runs 100% locally in your browser.
+            </span>
+            <button
+              type="button"
+              onClick={handleRunOcr}
+              disabled={isScanning}
+              className="btn-pill-gradient w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 text-xs sm:text-sm font-semibold text-white rounded-full cursor-pointer shadow-xs hover:shadow"
+            >
+              <Radar className="w-4 h-4" />
+              <span>Recognize Text with OCR</span>
+            </button>
           </div>
-        </div>
-      ) : (
-        /* Image Preview & OCR Control */
-        <div className="space-y-4">
-          <div className="bg-white/90 rounded-2xl p-4 sm:p-5 border border-white/95 shadow-sm space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[#E8EFFE]">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <FileText className="w-4 h-4 text-[#4F6BFF] shrink-0" />
-                <span className="font-semibold text-xs sm:text-sm text-[#0F1E4A] truncate">
-                  {selectedFile?.name || "screenshot.png"}
-                </span>
-                {imageDimensions && (
-                  <span className="text-[11px] font-mono text-[#526085] bg-[#F0F4FF] px-2 py-0.5 rounded">
-                    {imageDimensions.width} × {imageDimensions.height} px
-                  </span>
-                )}
-                {isDownscaled && (
-                  <span className="text-[10px] font-mono text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">
-                    Auto-scaled for OCR
-                  </span>
-                )}
-              </div>
+        )}
 
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={resetAll}
-                  disabled={isScanning || isOcrRunning}
-                  aria-label="Remove screenshot"
-                  className="inline-flex items-center gap-1 text-xs text-[#526085] hover:text-rose-600 transition-colors p-1.5 rounded-lg hover:bg-rose-50 cursor-pointer disabled:opacity-50"
-                >
-                  <X className="w-4 h-4" />
-                  <span>Remove</span>
-                </button>
-              </div>
+        {/* OCR In-Progress State */}
+        {isOcrRunning && (
+          <div className="space-y-3 pt-2">
+            <div className="flex items-center justify-between text-xs font-medium">
+              <span className="text-[#4F6BFF] flex items-center gap-1.5" aria-live="polite">
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                <span>{ocrStatusText || "Processing screenshot with Tesseract OCR..."}</span>
+              </span>
+              <span className="font-mono text-[#0F1E4A] font-bold">{ocrProgress}%</span>
             </div>
 
-            {/* Image Thumbnail Preview */}
-            <div className="relative rounded-xl overflow-hidden bg-slate-900/5 border border-slate-200/80 max-h-64 flex items-center justify-center">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={imagePreview}
-                alt="Selected screenshot preview"
-                className="max-h-64 w-auto object-contain rounded-lg"
+            <div className="w-full bg-[#E8EFFE] h-2 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-[#4F6BFF] to-[#5BC8FF] transition-all duration-200"
+                style={{ width: `${ocrProgress}%` }}
               />
             </div>
 
-            {/* OCR Action or Progress */}
-            {!hasExtracted && !isOcrRunning && (
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
-                <span className="text-xs text-[#526085]">
-                  Ready to read text. OCR runs 100% locally in your browser.
-                </span>
-                <button
-                  type="button"
-                  onClick={handleRunOcr}
-                  disabled={isScanning}
-                  className="btn-pill-gradient w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 text-xs sm:text-sm font-semibold text-white rounded-full cursor-pointer shadow-xs hover:shadow"
-                >
-                  <Radar className="w-4 h-4" />
-                  <span>Recognize Text with OCR</span>
-                </button>
-              </div>
-            )}
-
-            {/* OCR In-Progress State */}
-            {isOcrRunning && (
-              <div className="space-y-3 pt-2">
-                <div className="flex items-center justify-between text-xs font-medium">
-                  <span className="text-[#4F6BFF] flex items-center gap-1.5" aria-live="polite">
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                    <span>{ocrStatusText || "Processing screenshot with Tesseract OCR..."}</span>
-                  </span>
-                  <span className="font-mono text-[#0F1E4A] font-bold">{ocrProgress}%</span>
-                </div>
-
-                <div className="w-full bg-[#E8EFFE] h-2 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-[#4F6BFF] to-[#5BC8FF] transition-all duration-200"
-                    style={{ width: `${ocrProgress}%` }}
-                  />
-                </div>
-
-                <div className="flex justify-end pt-1">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleCancelOcr}
-                    className="text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200"
-                  >
-                    Cancel OCR
-                  </Button>
-                </div>
-              </div>
-            )}
+            <div className="flex justify-end pt-1">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleCancelOcr}
+                className="text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200"
+              >
+                Cancel OCR
+              </Button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </ImageIntake>
 
       {/* 2. Empty Text Result Notice */}
       {noTextDetected && (
