@@ -30,9 +30,11 @@ import {
   Cpu,
   Sparkles,
   ChevronRight,
-  Plus
+  Plus,
+  Camera
 } from "lucide-react";
 import Link from "next/link";
+import { ScreenshotScanner } from "@/components/ScreenshotScanner";
 
 const URL_MAX_LENGTH = 2048;
 const MESSAGE_MAX_LENGTH = 5000;
@@ -62,7 +64,7 @@ function ScanPageContent() {
   const queryParam = searchParams.get("q") || "";
   const queryClient = useQueryClient();
 
-  const [activeTab, setActiveTab] = React.useState<"url" | "message">("url");
+  const [activeTab, setActiveTab] = React.useState<"url" | "message" | "screenshot">("url");
   const [urlInput, setUrlInput] = React.useState(queryParam);
   const [messageInput, setMessageInput] = React.useState("");
   const [urlValidationError, setUrlValidationError] = React.useState<string | null>(null);
@@ -213,7 +215,7 @@ function ScanPageContent() {
   };
 
   // Example chips presets
-  const handleSelectExample = (type: "typosquat" | "benign" | "sms") => {
+  const handleSelectExample = (type: "typosquat" | "benign" | "sms" | "screenshot") => {
     setApiError(null);
     setUrlValidationError(null);
     setMessageValidationError(null);
@@ -229,6 +231,8 @@ function ScanPageContent() {
       setMessageInput(
         "[USPS Alert]: Your package #94001118982 cannot be delivered due to an unpaid $1.99 customs fee. Update your address at hxxp://usps-redelivery-portal[.]info/fee or your parcel will be returned."
       );
+    } else if (type === "screenshot") {
+      setActiveTab("screenshot");
     }
   };
 
@@ -604,6 +608,23 @@ function ScanPageContent() {
                 <Mail className="w-3.5 h-3.5" />
                 <span>Message / Email</span>
               </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab("screenshot");
+                  setUrlValidationError(null);
+                  setMessageValidationError(null);
+                }}
+                disabled={isScanning}
+                className={`flex items-center gap-2 px-5 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                  activeTab === "screenshot"
+                    ? "bg-white text-[#4F6BFF] shadow-[0_4px_12px_rgba(79,107,255,0.15)]"
+                    : "text-[#526085] hover:text-[#0F1E4A]"
+                }`}
+              >
+                <Camera className="w-3.5 h-3.5" />
+                <span>Screenshot</span>
+              </button>
             </div>
 
             <div className="flex items-center gap-2">
@@ -669,7 +690,7 @@ function ScanPageContent() {
                 </p>
               )}
             </form>
-          ) : (
+          ) : activeTab === "message" ? (
             <form onSubmit={handleMessageSubmit} className="space-y-3">
               <div className="relative flex flex-col gap-2 bg-white/90 rounded-2xl p-4 border border-white/95 shadow-[0_10px_30px_rgba(79,107,255,0.08)] focus-within:ring-2 focus-within:ring-[#4F6BFF]/40 transition-all">
                 <div className="flex items-center justify-between text-xs text-[#526085] pb-2 border-b border-[#E8EFFE]">
@@ -733,6 +754,18 @@ function ScanPageContent() {
                 </p>
               )}
             </form>
+          ) : (
+            <ScreenshotScanner
+              onAnalyzeUrl={(url) => {
+                startProgressAnimation();
+                urlMutation.mutate(url);
+              }}
+              onAnalyzeMessage={(msg) => {
+                startProgressAnimation();
+                messageMutation.mutate(msg);
+              }}
+              isScanning={isScanning}
+            />
           )}
 
           {/* 5-Step Strip Progress component */}
@@ -778,6 +811,16 @@ function ScanPageContent() {
               <Mail className="w-3.5 h-3.5 text-[#4F6BFF] shrink-0" />
               <span>USPS Customs Fee Lure</span>
               <span className="text-[#4F6BFF] font-sans font-medium text-[11px]">(Scam SMS)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSelectExample("screenshot")}
+              disabled={isScanning}
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/80 hover:bg-white text-[#526085] hover:text-[#0F1E4A] transition-all font-mono text-xs border border-white/90 shadow-xs hover:shadow-sm cursor-pointer"
+            >
+              <Camera className="w-3.5 h-3.5 text-[#5BC8FF] shrink-0" />
+              <span>KYC Expiry Notice</span>
+              <span className="text-[#5BC8FF] font-sans font-medium text-[11px]">(Screenshot)</span>
             </button>
           </div>
 
