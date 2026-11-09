@@ -11,7 +11,7 @@ import httpx
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from app.analyzers.intel import OPENPHISH, OpenPhish, digest
+from app.analyzers.intel import OPENPHISH, OpenPhish, url_digest
 from app.core.config import Settings
 from app.core.correlation import correlations
 from app.core.db import open_database
@@ -68,14 +68,14 @@ async def feed_sample(engine):
     except Exception:
         check(fresh(hashes, age), "OpenPhish cache", describe_cache(hashes, age))
         raise DemoFailure("OpenPhish publisher unavailable; cannot recover a sample.") from None
-    if not fresh(hashes, age) or not any(digest(str(url).partition("#")[0]) in hashes for url in feed):
+    if not fresh(hashes, age) or not any(url_digest(url) in hashes for url in feed):
         source.store(feed, now)
     hashes, age = cache_info(engine, datetime.now(UTC))
     ready = fresh(hashes, age)
     check(ready, "OpenPhish cache", describe_cache(hashes, age))
     if ready:
         for url in feed:
-            if digest(str(url).partition("#")[0]) not in hashes:
+            if url_digest(url) not in hashes:
                 continue
             try:
                 return str(validate_url(url))

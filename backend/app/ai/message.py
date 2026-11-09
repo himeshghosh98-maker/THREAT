@@ -1,20 +1,29 @@
+import json
 import re
+from urllib.parse import urlsplit
+from pydantic import HttpUrl
 
-from app.ai.privacy import CONTACT_OR_LINK, EMAIL, PHONE, display_link, refang
-from app.analyzers.phishing import BRANDS
+from app.ai.privacy import CONTACT_OR_LINK, EMAIL, PHONE, UPI, display_link, refang, ocr_text
+from app.analyzers.phishing import DATA, brand_aliases, extract
 from app.models.schemas import Impersonation, Indicator, MessageAnalysis
 
-URGENCY = re.compile(r"\b(urgent(?:ly)?|immediately|act now|final notice|within \d+ (?:hours?|minutes?)|last chance)\b", re.I)
-JOB = re.compile(r"\b(job|recruiter|employment|hiring|interview)\b", re.I)
-PARCEL = re.compile(r"\b(parcel|package|courier|redelivery|delivery)\b", re.I)
-CREDENTIALS = re.compile(r"\b(?:send|reply with|share|enter|provide)\b.{0,35}\b(?:otp|pin|cvv|password|passcode)\b", re.I)
-KYC = re.compile(r"\bkyc\b", re.I)
-BRAND = re.compile(r"\b(?:" + "|".join(map(re.escape, ["axis bank", "india post", *BRANDS])) + r")\b", re.I)
-ADVANCE = re.compile(r"\b(?:(?:pay|send|remit|submit)\b.{0,40}\b(?:fee|deposit|payment)|(?:registration|processing) fee (?:required|due)|refundable deposit|pay to receive)\b", re.I)
-DOCUMENTS = re.compile(r"\b(?:send|upload|submit|provide)\b.{0,40}\b(?:documents?|passport|aadhaar|identity proof)\b", re.I)
-REWARD = re.compile(r"\b(?:claim|collect|receive|won)\b.{0,35}\b(?:refund|prize|lottery|jackpot)\b", re.I)
-COLLECT = re.compile(r"\bupi collect(?:ion)? request|\b(?:approve|accept)\b.{0,25}\bupi\b", re.I)
-BLOCK = re.compile(r"\baccount\b.{0,30}\b(?:block(?:ed)?|suspend(?:ed)?|frozen)\b", re.I)
+PATTERNS = json.loads((DATA / "scam_patterns.json").read_text())
+compiled = {key: re.compile(pattern, re.I) for key, pattern in PATTERNS["patterns"].items()}
+URGENCY = compiled["urgency"]
+JOB = compiled["job"]
+PARCEL = compiled["parcel"]
+CREDENTIALS = compiled["credentials"]
+KYC = compiled["kyc"]
+BRAND = re.compile(r"\b(?:" + "|".join(map(re.escape, sorted(brand_aliases(), key=lambda name: (-len(name), name)))) + r")\b", re.I)
+ADVANCE = compiled["advance"]
+DOCUMENTS = compiled["documents"]
+REWARD = compiled["reward"]
+COLLECT = compiled["collect"]
+BLOCK = compiled["block"]
+
+
+DATA_RULES = [(row["id"], row["category"], re.compile(r"\b(?:" + row["pattern"] + r")\b", re.I))
+              for row in PATTERNS["signals"]]
 
 
 def unique(values):
@@ -22,10 +31,28 @@ def unique(values):
 
 
 def extract_links(text):
-    return unique(refang(match.group()) for match in CONTACT_OR_LINK.finditer(text) if match.lastgroup == "link")
+    links = []
+    for match in CONTACT_OR_LINK.finditer(UPI.sub(" ", ocr_text(text))):
+        if match.lastgroup != "link":
+            continue
+        raw = match.group()
+        url = refang(raw)
+        try:
+            parsed = HttpUrl(url)
+        except ValueError:
+            # Preserve explicit unsupported schemes for the existing rejection path.
+            if "://" in raw:
+                links.append(url)
+            continue
+        if "://" not in raw and not raw.lower().startswith("www.") and not (
+                extract(parsed.host).suffix or parsed.host.endswith((".example", ".invalid"))):
+            continue
+        links.append(str(parsed))
+    return unique(links)
 
 
 def analyze_message(message: str) -> tuple[MessageAnalysis, list[Indicator]]:
+    message = ocr_text(message)
     links = extract_links(message)
     signals = unique(m.group().lower() for m in URGENCY.finditer(message))
     indicators = []
@@ -54,10 +81,29 @@ def analyze_message(message: str) -> tuple[MessageAnalysis, list[Indicator]]:
         flag("kyc-request", "Pressured identity verification")
     if CREDENTIALS.search(message) and not re.search(r"\b(?:never|do not|don't)\s+(?:share|send|provide|enter)", message, re.I):
         flag("credential-request", "Credential solicitation")
+    normalized = re.sub(r"[^\w]+", " ", message.casefold())
+    for key, category, pattern in DATA_RULES:
+        if pattern.search(normalized) and not any(i.id == key for i in indicators):
+            flag(key, category)
     brand = BRAND.search(message)
     target = brand.group() if brand and any(i.severity == "high" for i in indicators) else None
     if target:
         flag("claimed-identity", "Possible impersonation", bool(links))
+    ambiguity = set()
+    for link in links[:5]:
+        try:
+            host = urlsplit(link).hostname or ""
+        except ValueError:
+            continue
+        for pattern, category in [(r"[1liI]", "l/1/I"), (r"[0oO]", "0/O"), (r"rn|m", "rn/m"), (r"vv|w", "vv/w")]:
+            if re.search(pattern, host.removeprefix("www.").rsplit(".", 1)[0]):
+                ambiguity.add(category)
+    if ambiguity:
+        indicators.append(Indicator(id="ocr-ambiguity", category="social_engineering", title="Possible OCR ambiguity",
+                                    severity="info", evidence=", ".join(sorted(ambiguity)), source="Local OCR rules"))
+    if UPI.search(message):
+        indicators.append(Indicator(id="upi-address", category="social_engineering", title="UPI address present",
+                                    severity="info", evidence="Payment address", source="Local message rules"))
     emails = [re.sub(r"\s*\[at\]\s*", "@", m[0], flags=re.I).replace("[.]", ".").lower().replace("[dot]", ".")
               for m in EMAIL.finditer(message)]
     analysis = MessageAnalysis(extracted_urls=[display_link(link) for link in links],

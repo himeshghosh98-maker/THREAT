@@ -1,5 +1,6 @@
 import asyncio
 import json
+import re
 from hashlib import sha256
 import re
 import unicodedata
@@ -17,11 +18,30 @@ from app.core import ssrf
 from app.models.schemas import Indicator
 
 DATA = Path(__file__).parents[1] / "data"
-BRANDS = json.loads((DATA / "brands.json").read_text())
+BRANDS = json.loads((DATA / "brands.json").read_text())["brands"]
 TLDS = set(json.loads((DATA / "suspicious_tlds.json").read_text()))
 # Use the bundled PSL, with no HTTP updates or shared disk cache.
 extract = tldextract.TLDExtract(suffix_list_urls=(), cache_dir=None, include_psl_private_domains=True)
 CONFUSABLES = str.maketrans("аеорсхуіјӏαρο", "aeopcxyijlapo")
+
+
+CREDENTIAL_WORDS = ("login", "secure", "verify", "update", "kyc", "account", "refund", "support")
+MIN_FUZZY_LENGTH = 5
+MAX_BRAND_EDITS = 1
+PLATFORMS = {"github.io", "pages.dev", "vercel.app", "netlify.app", "web.app",
+             "blogspot.com", "wordpress.com", "firebaseapp.com", "githubusercontent.com"}
+
+
+def shared_platform(host):
+    return extract(host).is_private or any(host == p or host.endswith("." + p) for p in PLATFORMS)
+
+
+def brand_aliases():
+    return (alias for brand in BRANDS.values() for alias in brand["aliases"])
+
+
+BRAND_TOKENS = tuple(dict.fromkeys(alias.replace(" ", "") for alias in brand_aliases()))
+OWNED_LABELS = {extract(host).domain for brand in BRANDS.values() for host in brand["owned_domains"]}
 
 
 def registered(host: str) -> str:
@@ -44,33 +64,46 @@ def inspect_url(url: HttpUrl) -> list[Indicator]:
         items.append(evidence(key, category, title, severity, detail, "URL and local reference lists"))
 
     official = any(host == domain or host.endswith("." + domain)
-                   for domains in BRANDS.values() for domain in domains)
-    if not official:
-        tokens = [domain_label, *domain_label.split("-")]
-        for brand in BRANDS:
-            distance = min(Levenshtein.distance(token, brand) for token in tokens)
-            if distance <= (1 if len(brand) >= 5 else 0) or (
-                    len(brand) >= 5 and min(Levenshtein.distance(t.translate(str.maketrans("01", "ol")), brand)
-                                           for t in tokens) <= 1):
-                flag("brand-lookalike", "Brand-like domain label",
-                     f"The registered label resembles {brand} (edit distance {distance}).", "high", "typosquat")
-                break
-        for brand in BRANDS:
-            if brand in parts.subdomain and brand not in reg:
-                flag("brand-subdomain", "Brand in subdomain", f"{brand} occurs outside the registered domain.")
-                break
-
-    if not official and any(label.startswith("xn--") for label in host.split(".")):
+                   for brand in BRANDS.values() for domain in brand["owned_domains"])
+    credential = any(word in domain_label or word in (url.path or "").lower() for word in CREDENTIAL_WORDS)
+    aliases = BRAND_TOKENS
+    platform = shared_platform(host)
+    if not official and not platform:
+        tokens = domain_label.split("-")
+        if domain_label in aliases or domain_label in OWNED_LABELS:
+            flag("brand-other-suffix", "Brand label on a non-owned domain",
+                 "The exact label appears under a different suffix.", "low")
+        else:
+            for alias in aliases:
+                combination = alias in tokens or (len(alias) >= 3 and alias in domain_label and credential)
+                similar = len(alias) >= MIN_FUZZY_LENGTH and any(
+                    Levenshtein.distance(token.translate(str.maketrans("01", "ol")), alias) <= MAX_BRAND_EDITS
+                    for token in tokens)
+                if similar or combination:
+                    flag("brand-lookalike", "Brand-like domain label",
+                         f"The registered label resembles {alias}.", "high", "typosquat")
+                    break
+        if set(re.split(r"[.-]", parts.subdomain)) & set(aliases):
+            flag("brand-subdomain", "Brand in subdomain", "A brand appears outside the registered domain.")
+        path_words = set(re.findall(r"[a-z0-9]+", (url.path or "").lower()))
+        if path_words.intersection(aliases) and path_words.intersection(CREDENTIAL_WORDS):
+            flag("brand-path", "Brand and credential terms in path", "The external path combines a brand and a credential term.")
+    if not official and not platform and any(label.startswith("xn--") for label in host.split(".")):
         flag("idn-label", "Internationalized domain label", "The host includes a punycode label.", "low", "homograph")
         for label in host.split("."):
             if not label.startswith("xn--"):
                 continue
             decoded = idna.decode(label)
-            scripts = {unicodedata.name(c, "").split(" ")[0] for c in decoded if c.isalpha()}
-            if len(scripts) > 1 or decoded.translate(CONFUSABLES) != decoded:
+            folded = unicodedata.normalize("NFKD", decoded.translate(CONFUSABLES))
+            skeleton = "".join(c for c in folded if not unicodedata.combining(c)).casefold()
+            if skeleton != decoded and any(token in aliases for token in skeleton.split("-")):
                 flag("confusable-label", "Visually confusable label",
-                     "A decoded label mixes scripts or contains a listed lookalike character.", "high", "homograph")
+                     "A decoded label resembles a brand after folding known lookalikes.", "high", "homograph")
                 break
+    if any(i.category == "typosquat" or i.id == "confusable-label" for i in items) and (
+            credential or host.split(".")[-1] in TLDS):
+        flag("brand-corroboration", "Corroborating URL context",
+             "A lookalike is paired with a credential term or watchlisted suffix.", "high")
     if "@" in str(url):
         flag("at-sign", "At-sign in URL", "The URL contains an at-sign.")
     try:
@@ -78,6 +111,8 @@ def inspect_url(url: HttpUrl) -> list[Indicator]:
     except ValueError:
         pass
     else:
+        if credential:
+            flag("ip-credential", "Credential terms at an IP address", "The IP URL has a credential-style path.")
         flag("ip-literal", "Numeric destination", "The authority is a literal IP address.")
     if parts.subdomain and len(parts.subdomain.split(".")) > 3:
         flag("deep-subdomain", "Deeply nested hostname", "More than three subdomain labels precede the registered domain.")

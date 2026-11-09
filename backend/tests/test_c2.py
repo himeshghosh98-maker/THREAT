@@ -120,13 +120,13 @@ def test_openphish_refresh_and_matches(client, network):
     assert exact.risk.classification == "confirmed_malicious" and exact.threat_intel[0].matched
     host = scan(client, "https://listed.example/other")
     assert host.risk.classification == "suspicious" and host.threat_intel[0].matched
-    assert sum(r.headers["host"] == "raw.githubusercontent.com" for r in network.requests) == 1
+    assert sum("openphish" in r.url.path for r in network.requests) == 1
     with Session(client.app.state.engine) as db:
         snapshot = db.get(FeedSnapshot, intel.OPENPHISH)
         snapshot.refreshed_at = datetime.now(UTC) - timedelta(hours=7)
         db.commit()
     clean = scan(client)
-    assert sum(r.headers["host"] == "raw.githubusercontent.com" for r in network.requests) == 2
+    assert sum("openphish" in r.url.path for r in network.requests) == 2
     assert all(e.detail == "No match found in this source. This does not indicate the site is safe."
                for e in clean.threat_intel)
 
@@ -137,8 +137,8 @@ def test_unavailable_sources(client, network):
     network.handler = lambda req: network.response(503) if req.headers["host"] == "raw.githubusercontent.com" else original(req)
     report = scan(client)
     assert report.risk.classification == "low_risk" and report.risk.confidence < 1
-    assert {intel.OPENPHISH, intel.GOOGLE} <= set(report.risk.checks_failed)
-    assert report.threat_intel[1].detail == "not configured"
+    assert intel.OPENPHISH in report.risk.checks_failed and intel.GOOGLE not in report.risk.checks_failed
+    assert report.limitations.count("Google Safe Browsing is not configured") == 1
     assert all(e.detail != intel.NO_MATCH and not e.matched for e in report.threat_intel)
     assert not any(r.headers["host"] == "safebrowsing.googleapis.com" for r in network.requests)
 

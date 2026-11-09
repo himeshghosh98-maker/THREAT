@@ -1,0 +1,67 @@
+{
+  "_comment": "Incomplete heuristic list. Maintain on the tune split only; phrase matches are evidence, not proof of fraud.",
+  "signals": [
+    {
+      "id": "credential-request",
+      "category": "Credential solicitation",
+      "pattern": "(?:apna |apnar |aapka |nijer )?(?:otp|pin|cvv|password) (?:batayein|batayen|batao|bolun|din|pathan|bhej(?:o|iye)|share (?:karo|karein|korun))"
+    },
+    {
+      "id": "identity-update",
+      "category": "Pressured identity update",
+      "pattern": "(?:kyc|pan|aadhaar|aadhar)(?: card)? (?:expiry|expire[ds]?|update (?:karo|karein|korun|na korle)|verify (?:now|karo|korun))"
+    },
+    {
+      "id": "account-threat",
+      "category": "Account restriction threat",
+      "pattern": "(?:account|card|khata) (?:will be |ho |hoye )?(?:block|blocked|band|bondho)(?: ho| hoga| hobe| kore| kar)?"
+    },
+    {
+      "id": "service-cutoff",
+      "category": "Service disconnection threat",
+      "pattern": "(?:sim|electricity|bijli|bidyut)(?: card| connection)? (?:will be |aaj |aj |aaj raat |ho )?(?:disconnected|disconnect|cut off|kat|band|bondho)"
+    },
+    {
+      "id": "advance-fee",
+      "category": "Advance-fee request",
+      "pattern": "(?:send (?:money|payment) to (?:receive|claim)|(?:refund|prize|lottery) (?:pete|paane ke liye) (?:age |pehle )?(?:taka|paise) (?:pathan|bhejo)|(?:registration|processing) fee (?:jama|joma|bhejo|pathan)|(?:age|pehle) (?:taka|paise) (?:pathan|bhejo))"
+    },
+    {
+      "id": "reward-claim",
+      "category": "Prize solicitation",
+      "pattern": "(?:kbc|lottery|lotari) (?:lottery |prize )?(?:jitechen|jeeta|jeete|winner|claim)|claim (?:your |a )?(?:refund|prize|lottery)"
+    },
+    {
+      "id": "toll-fine",
+      "category": "Toll or traffic payment solicitation",
+      "pattern": "(?:fastag|challan)\\b.{0,45}\\b(?:pay (?:now|fine)|fine (?:bharo|jama)|payment required)"
+    },
+    {
+      "id": "delivery-fee",
+      "category": "Delivery payment request",
+      "pattern": "(?:parcel|customs|courier)\\b.{0,30}\\b(?:fee due|fee jama|shulk bharo|pay to release)"
+    },
+    {
+      "id": "care-solicitation",
+      "category": "Customer-care solicitation",
+      "pattern": "(?:customer care|helpline)(?: number)? (?:par |e )?(?:call karein|call korun|call now)\\b.{0,35}\\b(?:refund|kyc|otp|payment)"
+    },
+    {
+      "id": "upi-collect",
+      "category": "UPI collect request",
+      "pattern": "upi (?:collect|request) (?:approve|accept|manzoor)|(?:approve|accept) (?:the )?upi (?:collect|request)"
+    }
+  ],
+  "patterns": {
+    "urgency": "\\b(urgent(?:ly)?|immediately|act now|final notice|within \\d+ (?:hours?|minutes?)|last chance)\\b",
+    "job": "\\b(job|recruiter|employment|hiring|interview)\\b",
+    "parcel": "\\b(parcel|package|courier|redelivery|delivery)\\b",
+    "credentials": "\\b(?:send|reply with|share|enter|provide)\\b.{0,35}\\b(?:otp|pin|cvv|password|passcode)\\b",
+    "kyc": "\\bkyc\\b",
+    "advance": "\\b(?:(?:pay|send|remit|submit)\\b.{0,40}\\b(?:fee|deposit|payment)|(?:registration|processing) fee (?:required|due)|refundable deposit|pay to receive)\\b",
+    "documents": "\\b(?:send|upload|submit|provide)\\b.{0,40}\\b(?:documents?|passport|aadhaar|identity proof)\\b",
+    "reward": "\\b(?:claim|collect|receive|won)\\b.{0,35}\\b(?:refund|prize|lottery|jackpot)\\b",
+    "collect": "\\bupi collect(?:ion)? request|\\b(?:approve|accept)\\b.{0,25}\\bupi\\b",
+    "block": "\\baccount\\b.{0,30}\\b(?:block(?:ed)?|suspend(?:ed)?|frozen)\\b"
+  }
+}

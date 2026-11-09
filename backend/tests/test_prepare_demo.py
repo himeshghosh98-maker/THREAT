@@ -22,14 +22,14 @@ async def test_feed_check(client, monkeypatch, capsys, initial, count, age, refr
     engine = client.app.state.engine
     with Session(engine) as db:
         if initial != "missing":
-            hashes = [demo.digest(str(url)) if initial != "rotated" else "old"] if count else []
+            hashes = [demo.url_digest(url) if initial != "rotated" else "old"] if count else []
             db.add(FeedSnapshot(source=demo.OPENPHISH, refreshed_at=datetime.now(UTC) - timedelta(hours=age),
                                 entries={"urls": hashes, "hosts": []}))
             db.commit()
     monkeypatch.setattr(OpenPhish, "download_urls", AsyncMock(return_value=[url]))
     assert await demo.feed_sample(engine) == str(url)
     hashes, elapsed = demo.cache_info(engine, datetime.now(UTC))
-    assert demo.digest(str(url)) in hashes
+    assert demo.url_digest(url) in hashes
     assert (elapsed < timedelta(minutes=1)) == refresh
     output = capsys.readouterr().out
     assert "PASS OpenPhish cache | 1 entries, age " in output

@@ -87,6 +87,9 @@ async def scan_message(request: Request, payload: MessageInput, db: Session = De
             failed.append(prefix + "URL scan blocked or unavailable")
             continue
         linked.append(result)
+        for note in result.limitations:
+            if note.endswith("is not configured") and note not in report.limitations:
+                report.limitations.append(note)
         report.indicators.extend(i.model_copy(update={"id": f"link-{index}-{i.id}"}) for i in result.indicators)
         completed.extend(prefix + name for name in result.risk.checks_completed)
         failed.extend(prefix + name for name in result.risk.checks_failed)
