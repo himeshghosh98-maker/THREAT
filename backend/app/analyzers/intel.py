@@ -56,25 +56,28 @@ class OpenPhish(ThreatIntelSource):
     def __init__(self, engine):
         self.engine = engine
 
+    @staticmethod
+    async def download_urls():
+        result = await ssrf.safe_fetch(FEED, max_redirects=0)
+        if result.failed or not result.chain or result.chain[-1].status != 200:
+            raise ssrf.FetchFailure("Feed download unavailable")
+        urls = [HttpUrl(line.strip()) for line in result.body.decode().splitlines()
+                if line.strip() and not line.startswith("#")]
+        if not urls:
+            raise ssrf.FetchFailure("Empty feed")
+        return urls
+
     async def snapshot(self, force=False):
         now = datetime.now(UTC)
         with Session(self.engine) as db:
             row = db.get(FeedSnapshot, self.name)
             if row and not force and now - row.refreshed_at.replace(tzinfo=UTC) < timedelta(hours=6):
                 return row.entries
-        result = await ssrf.safe_fetch(FEED, max_redirects=0)
-        if result.failed or not result.chain or result.chain[-1].status != 200:
-            raise ssrf.FetchFailure("Feed download unavailable")
-        urls, hosts = set(), set()
-        for line in result.body.decode().splitlines():
-            if not line.strip() or line.startswith("#"):
-                continue
-            url = HttpUrl(line.strip())
-            urls.add(digest(str(url).partition("#")[0]))
-            hosts.add(digest(url.host.strip("[]").lower().rstrip(".")))
-        if not urls:
-            raise ssrf.FetchFailure("Empty feed")
-        entries = {"urls": sorted(urls), "hosts": sorted(hosts)}
+        return self.store(await self.download_urls(), now)
+
+    def store(self, feed, now):
+        entries = {"urls": sorted({digest(str(url).partition("#")[0]) for url in feed}),
+                   "hosts": sorted({digest(url.host.strip("[]").lower().rstrip(".")) for url in feed})}
         insert = sqlite_insert if self.engine.dialect.name == "sqlite" else postgres_insert
         stmt = insert(FeedSnapshot).values(source=self.name, refreshed_at=now, entries=entries)
         with self.engine.begin() as conn:

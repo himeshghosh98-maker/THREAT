@@ -136,11 +136,13 @@ class Registry:
         return digest, status, events
 
 
-def publish(db: Session, row, settings):
+def publish(db: Session, row, settings, *, local_registry=None):
     with SUBMIT_LOCK:
         db.refresh(row)
         report = read_report(row)
-        if report.onchain.status != "not_published":
+        migrate_local = (local_registry and settings.chain_mode == report.onchain.network == "local"
+                         and report.onchain.contract_address != local_registry)
+        if report.onchain.status != "not_published" and not migrate_local:
             try:
                 return observed(row, settings)[0]
             except MissingReceipt:

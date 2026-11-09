@@ -8,14 +8,17 @@ from app.models.orm import ReportRow
 from app.web3.registry import ChainUnavailable, publish
 
 
-def reseed(db, settings):
+def reseed(db, settings, *, ids=None, local_registry=None):
     if settings.chain_mode != "local":
         raise ValueError("Receipt recovery requires a local registry.")
-    rows = db.scalars(select(ReportRow).where(ReportRow.receipt.is_not(None)).order_by(ReportRow.id))
+    query = select(ReportRow).where(ReportRow.receipt.is_not(None)).order_by(ReportRow.id)
+    if ids is not None:
+        query = query.where(ReportRow.id.in_(ids))
+    rows = db.scalars(query)
     for row in rows:
         state = read_report(row).onchain
-        if state.network == "local" and state.status != "not_published":
-            publish(db, row, settings)
+        if state.network == "local" or row.receipt["onchain"]["network"] == "local-stub":
+            publish(db, row, settings, local_registry=local_registry)
 
 
 def main():

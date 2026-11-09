@@ -16,6 +16,8 @@ Copy-Item .env.example .env     # Initial setup only
 
 Open http://localhost:8000/docs for the interactive API. The seed command creates seven fixtures with stable IDs, including two synthetic clusters. It preserves published report content and attempts to publish the first fixture when the local registry is reachable.
 
+For the live demonstration, run `.\scripts\prepare_demo.ps1` from this directory. The [demo checklist](docs/DEMO_CHECKLIST.md) covers startup order, expected results and recovery.
+
 ### Local chain and Sepolia
 
 Install Node.js 22 or 24 to use Hardhat. From `backend/`:

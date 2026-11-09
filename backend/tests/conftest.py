@@ -125,7 +125,7 @@ def mock_registry(monkeypatch):
         def submit(self, digest, category):
             id = len(ledger)
             tx = "0x" + f"{id + 1:064x}"
-            ledger[id] = {"digest": digest, "status": "published", "category": category,
+            ledger[id] = {"submitted_hash": digest, "digest": digest, "status": "published", "category": category,
                           "history": [History(status="published", tx_hash=tx, timestamp=datetime.now(UTC))]}
             state = Onchain(status="published", report_hash=digest, tx_hash=tx, chain_report_id=id,
                             network="local", contract_address=self.address)
@@ -135,6 +135,9 @@ def mock_registry(monkeypatch):
             if receipt["onchain"]["chain_report_id"] not in ledger:
                 raise registry.MissingReceipt()
             entry = ledger[receipt["onchain"]["chain_report_id"]]
+            if (entry["submitted_hash"] != receipt["onchain"]["report_hash"] or
+                    entry["history"][0].tx_hash != receipt["onchain"]["tx_hash"]):
+                raise registry.MissingReceipt()
             return entry["digest"], entry["status"], entry["history"] if history else []
 
     monkeypatch.setattr(registry, "Registry", MockRegistry)
