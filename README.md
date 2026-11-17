@@ -4,14 +4,15 @@ An intelligent threat detection and digital trust system that evaluates web thre
 
 [![Live Demo](https://img.shields.io/badge/Live_Demo-threat--beta.vercel.app-blue?style=for-the-badge&logo=vercel)](https://threat-beta.vercel.app)
 [![API Documentation](https://img.shields.io/badge/FastAPI-Docs-009688?style=for-the-badge&logo=fastapi)](http://localhost:8000/docs)
-[![Documentation](https://img.shields.io/badge/User_Guide-PDF_%26_Markdown-orange?style=for-the-badge&logo=gitbook)](docs/USER_GUIDE.md)
+[![User Guide PDF](https://img.shields.io/badge/User_Guide-PDF-orange?style=for-the-badge&logo=gitbook)](docs/USER_GUIDE.pdf)
+[![Technical Architecture PDF](https://img.shields.io/badge/Technical_Spec-PDF-blueviolet?style=for-the-badge&logo=gitbook)](docs/TECHNICAL_SPECIFICATION.pdf)
 
 ---
 
 ## Complete Project Documentation
 
-- 📖 **[Comprehensive User Guide (Markdown)](docs/USER_GUIDE.md)**: Full operator manual, 60-second report walkthrough, step-by-step scanner guides, scoring engine breakdown, and 5-minute judge demo script.
-- 📄 **[Download Complete User Guide (PDF)](docs/USER_GUIDE.pdf)**: 27-page styled, printable operator manual with real system screenshots, tables, and architectural diagrams.
+- ⚙️ **[Technical Architecture & Engineering Specification (PDF)](docs/TECHNICAL_SPECIFICATION.pdf)** ([Markdown Source](docs/TECHNICAL_SPECIFICATION.md)): 15-page comprehensive technical reference detailing end-to-end processing pipelines, anti-SSRF socket pinning, analyzer mesh execution, risk mathematical scoring formulas, database schema with salted hashes, Solidity smart contract architecture, and sequence diagrams.
+- 📖 **[Complete User Guide & Operator Manual (PDF)](docs/USER_GUIDE.pdf)** ([Markdown Source](docs/USER_GUIDE.md)): 29-page exhaustive manual with complete button-by-button UI controls directory, 60-second report walkthrough, step-by-step scanner guides, independent accuracy verification guide (how and where to compare ground truth), troubleshooting matrix, and 5-minute judge demo script.
 - 🔌 **[API Contract Specification](docs/API_CONTRACT.md)**: OpenAPI v1 data contracts, schemas, and endpoint definitions.
 - 🏛️ **[Backend Architecture & Security Methodology](backend/docs/ARCHITECTURE.md)**: Deep dive into anti-SSRF protections, deterministic risk engine, and smart contract anchoring.
 - 📊 **[Empirical Accuracy Evaluation Report](backend/docs/ACCURACY_REPORT.md)**: Wilson score interval metrics across stratified 120-case benchmark (0.0% False Positive Rate on controlled cases).
